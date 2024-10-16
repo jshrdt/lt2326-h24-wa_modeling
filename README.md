@@ -1,102 +1,74 @@
 ## Bonus A
 
-- Increased batch size to 128 (prev: 32): due to the class imbalance, this might make it more likely for the model to see each class at least once per batch
-- Added linear layer, linear15 with size ~1k (dim 104*104/10): intermediary stepping stone between jump from linear1 with ~10k to linear2 with 300 dimensions 
-- Decreased learning rate to 0.001 (prev: 0.01): following intuition from what improved performance in assignment 1
-- Decreased epochs, here: 12 (varied 10-15, prev: 20): loss seemed to bottom out (values ~5-20) around that point
-- Decreased padding in conv2d/maxpool2d to 1 (prev: 2): again following intuition from assignment 1, changes hidden_size to 104*104
 
-Results passed 5% multiple times, occasionally dipping below 5% accuracy. I assume the class imbalance to play a large role in this, and since absolute consistency did not seem to be reqcuired for this part, I stuck with these  changes. Though minimal, when compared with the original architecture's results, the loss values and their change across epochs is now indicative of the model being able to learn.
+With batch size 128 and learning rate 0.001 and some guesses to architectural changes (additional linear layer), results passed 5% multiple times, but were still rather inconsistent (3~6%). However, compared with the original architecture's results, the loss values and their change across epochs were indicative of the model learning (loss decreasing across 10 epochs from ~300 down to 10). In addition, I noticed test results were not the same when running the test script multiple times on the same model.  
+So I had a look at the testing script and noticed that the y label for a given class seemed to be inconsistent across runs (depending on the order in which classes were seen after shuffling of the testing data?).
 
-### Condensed output for wikiart_5perc.pth
+- Fixed label encoding for ilabel in WikiArtDataset.__getitem__ by using a dictionary mapping arttypes to idx (entries sorted alphabetically to assure consistency across training and testing)
 
-$ python3 train.py  
-Running...  
-Gathering files for /scratch/lt2326-2926-h24/wikiart/train  
-...............................finished  
-In epoch 0, loss = 322.7892150878906  
-In epoch 1, loss = 244.20724487304688  
-In epoch 2, loss = 160.24156188964844  
-In epoch 3, loss = 79.05674743652344  
-In epoch 4, loss = 41.386409759521484  
-In epoch 5, loss = 20.552532196044922  
-In epoch 6, loss = 12.533958435058594  
-In epoch 7, loss = 11.332183837890625  
-In epoch 8, loss = 12.3660249710083  
-In epoch 9, loss = 17.558002471923828  
-In epoch 10, loss = 10.761187553405762  
-In epoch 11, loss = 15.001067161560059  
+After fixing label encoding, test results were consistent when re-testing the same model. This alone brought accuracy to about 15%, even with the original parameters and architecture and loss being seemingly stagnant.
 
-$ python3 test.py  
-Running...  
-Gathering files for /scratch/lt2326-2926-h24/wikiart/test  
-...............................finished    
-Accuracy: 0.0634920671582222  
-Confusion Matrix  
-tensor([[ 0.,  0.,  0.,  0.,  1.,  0.,  0.,  1.,  0.,  0.,  0.,  3.,  0.,  0.,
-          1.,  0.,  1.,  2.,  2.,  1.,  1.,  0.,  0.,  0.,  2.,  0.,  0.],
-        [ 0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,
-          0.,  0.,  0.,  0.,  0.,  0.,  0.,  1.,  0.,  0.,  0.,  0.,  0.],
-        [ 1.,  0.,  1.,  1.,  2.,  0.,  0.,  2.,  0.,  0.,  0.,  3.,  0.,  1.,
-          1.,  0.,  0.,  1.,  1.,  4.,  3.,  0.,  0.,  0.,  2.,  0.,  0.],
-        [ 2.,  0.,  0.,  1.,  2.,  1.,  0.,  0.,  0.,  3.,  0.,  6.,  0.,  3.,
-          2.,  0.,  5.,  0.,  0.,  1.,  6.,  0.,  0.,  0.,  0.,  0.,  0.],
-        [ 0.,  0.,  0.,  0.,  0.,  0.,  0.,  2.,  0.,  0.,  0.,  3.,  0.,  0.,
-          0.,  0.,  0.,  1.,  1.,  1.,  3.,  0.,  0.,  0.,  1.,  1.,  0.],
-        [ 0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  1.,  0.,  0.,
-          0.,  0.,  0.,  1.,  0.,  0.,  1.,  0.,  0.,  0.,  0.,  0.,  0.],
-        [ 0.,  1.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,
-          0.,  0.,  1.,  1.,  0.,  0.,  0.,  0.,  0.,  2.,  1.,  0.,  0.],
-        [ 0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,
-          0.,  0.,  0.,  1.,  0.,  0.,  1.,  0.,  0.,  0.,  0.,  0.,  0.],
-        [ 0.,  1.,  0.,  0.,  1.,  1.,  0.,  1.,  0.,  2.,  0.,  2.,  1.,  0.,
-          2.,  0.,  0.,  2.,  0.,  2.,  2.,  0.,  0.,  0.,  0.,  0.,  0.],
-        [ 1.,  1.,  0.,  1.,  2.,  0.,  0.,  1.,  0.,  1.,  1., 11.,  1.,  0.,
-          3.,  0.,  1.,  6.,  1.,  0., 15.,  0.,  0.,  0.,  5.,  1.,  0.],
-        [ 2.,  0.,  0.,  1.,  1.,  0.,  0.,  1.,  0.,  0.,  0., 13.,  1.,  0.,
-          0.,  0.,  0.,  6.,  0.,  4., 12.,  0.,  0.,  0.,  9.,  1.,  0.],
-        [ 0.,  0.,  0.,  1.,  9.,  0.,  0.,  1.,  0.,  4.,  0., 20.,  0.,  2.,
-          2.,  0.,  1., 12.,  0.,  2., 41.,  0.,  0.,  0.,  6.,  0.,  0.],
-        [ 0.,  0.,  0.,  0.,  1.,  0.,  0.,  0.,  0.,  0.,  0.,  1.,  0.,  0.,
-          1.,  0.,  0.,  2.,  0.,  0.,  0.,  0.,  0.,  3.,  2.,  0.,  0.],
-        [ 0.,  0.,  0.,  0.,  5.,  0.,  0.,  0.,  0.,  2.,  0.,  5.,  0.,  0.,
-          0.,  0.,  1.,  0.,  0.,  0.,  1.,  0.,  0.,  0.,  1.,  0.,  0.],
-        [ 1.,  0.,  0.,  1.,  3.,  0.,  1.,  0.,  0.,  2.,  0., 10.,  0.,  1.,
-          1.,  0.,  1.,  4.,  0.,  4., 19.,  0.,  0.,  0.,  3.,  0.,  0.],
-        [ 1.,  0.,  0.,  0.,  1.,  0.,  0.,  0.,  0.,  0.,  0.,  1.,  0.,  0.,
-          0.,  0.,  0.,  0.,  0.,  0.,  2.,  0.,  0.,  0.,  1.,  0.,  0.],
-        [ 1.,  0.,  0.,  1.,  3.,  2.,  0.,  0.,  0.,  1.,  0., 18.,  2.,  5.,
-          4.,  0.,  1.,  5.,  1.,  6., 25.,  0.,  2.,  0.,  4.,  1.,  0.],
-        [ 1.,  0.,  0.,  0.,  2.,  0.,  1.,  0.,  1.,  1.,  0.,  8.,  0.,  0.,
-          2.,  0.,  2.,  3.,  2.,  2.,  2.,  0.,  3.,  0.,  2.,  1.,  1.],
-        [ 0.,  0.,  0.,  1.,  2.,  0.,  0.,  0.,  0.,  1.,  0.,  0.,  0.,  0.,
-          2.,  0.,  1.,  0.,  0.,  3.,  2.,  0.,  0.,  0.,  0.,  0.,  0.],
-        [ 0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  1.,  0.,  0.,
-          0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.],
-        [ 1.,  0.,  0.,  0.,  4.,  0.,  0.,  1.,  0.,  2.,  0.,  8.,  0.,  1.,
-          0.,  0.,  0.,  6.,  1.,  3., 12.,  0.,  1.,  1.,  4.,  0.,  0.],
-        [ 0.,  0.,  0.,  1.,  1.,  1.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,
-          1.,  0.,  0.,  2.,  0.,  1.,  2.,  0.,  0.,  0.,  0.,  0.,  0.],
-        [ 0.,  0.,  0.,  0.,  2.,  0.,  0.,  0.,  0.,  1.,  0.,  2.,  0.,  0.,
-          0.,  0.,  0.,  1.,  0.,  0.,  2.,  0.,  0.,  0.,  0.,  0.,  0.],
-        [ 1.,  0.,  0.,  0.,  3.,  0.,  0.,  0.,  0.,  0.,  0.,  3.,  0.,  0.,
-          0.,  0.,  0.,  0.,  0.,  1.,  9.,  0.,  0.,  0.,  2.,  0.,  0.],
-        [ 0.,  0.,  0.,  0.,  1.,  0.,  0.,  0.,  0.,  1.,  0.,  1.,  0.,  0.,
-          0.,  0.,  0.,  1.,  1.,  0.,  4.,  0.,  0.,  0.,  0.,  0.,  0.],
-        [ 0.,  0.,  0.,  0.,  2.,  0.,  0.,  0.,  0.,  0.,  0.,  1.,  0.,  0.,
-          0.,  0.,  0.,  2.,  0.,  3.,  2.,  0.,  0.,  0.,  2.,  0.,  0.],
-        [ 0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,
-          0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  1.,  0.,  0.]])
-__
+
+### Condensed output for wikiart_bonusA.pth
+In epoch 0, loss = 4617.5654296875
+In epoch 1, loss = 1135.1680908203125
+...
+In epoch 9, loss = 1175.9444580078125
+
+Accuracy: 0.16031746566295624
+
+___
 
 ## Part 1
 
 - Account for imbalanced classes by using nn.NLLLoss()'s weight parameter to weight the loss per-class inverse to the class' frequency (https://medium.com/@zergtant/use-weighted-loss-function-to-solve-imbalanced-data-classification-problems-749237f38b75, Oct 16)
 
 Changes:
-- label_counts dict attribute added in WikiArtDataset: Absolute frequency of each arttype in data
+- label_counts attribute added in WikiArtDataset: dict with arttype: absolute frequency
 - class_weights dict & weights tensor added in train.py train() function
 - weights tensor of length=n_classes passed to NLLLoss function
+
+### Output
+Running...
+Gathering files for /scratch/lt2326-2926-h24/wikiart/train
+...............................finished
+Starting epoch 0
+100%|██████████████████████████████████████████████| 418/418 [00:38<00:00, 10.92it/s]
+In epoch 0, loss = 1490.2838134765625
+Starting epoch 1
+100%|██████████████████████████████████████████████| 418/418 [00:12<00:00, 34.76it/s]
+In epoch 1, loss = 659.7559814453125
+Starting epoch 2
+100%|██████████████████████████████████████████████| 418/418 [00:13<00:00, 30.99it/s]
+In epoch 2, loss = 516.181396484375
+Starting epoch 3
+100%|██████████████████████████████████████████████| 418/418 [00:13<00:00, 29.94it/s]
+In epoch 3, loss = 268.4538269042969
+Starting epoch 4
+100%|██████████████████████████████████████████████| 418/418 [00:13<00:00, 29.95it/s]
+In epoch 4, loss = 174.8949737548828
+Starting epoch 5
+100%|██████████████████████████████████████████████| 418/418 [00:13<00:00, 29.93it/s]
+In epoch 5, loss = 416.5644226074219
+Starting epoch 6
+100%|██████████████████████████████████████████████| 418/418 [00:13<00:00, 30.05it/s]
+In epoch 6, loss = 185.43495178222656
+Starting epoch 7
+100%|██████████████████████████████████████████████| 418/418 [00:12<00:00, 33.00it/s]
+In epoch 7, loss = 79.78329467773438
+Starting epoch 8
+100%|██████████████████████████████████████████████| 418/418 [00:12<00:00, 33.76it/s]
+In epoch 8, loss = 176.1267852783203
+Starting epoch 9
+100%|██████████████████████████████████████████████| 418/418 [00:12<00:00, 34.06it/s]
+In epoch 9, loss = 73.84375
+gussucju@GU.GU.SE@mltgpu:/srv/data/gussucju$ python3 test.py 
+Running...
+Gathering files for /scratch/lt2326-2926-h24/wikiart/test
+...............................finished
+100%|█████████████████████████████████████████████| 630/630 [00:02<00:00, 252.54it/s]
+Accuracy: 0.1746031790971756
+Confusion Matrix
 
 ___
 

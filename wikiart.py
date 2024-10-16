@@ -50,14 +50,15 @@ class WikiArtDataset(Dataset):
         self.classes = list(classes)
         self.device = device
         self.label_counts = label_counts
-        
+        self.label_to_idx = {label: i for i, label in enumerate(sorted(list(classes)))}
+
     def __len__(self):
         return len(self.filedict)
 
     def __getitem__(self, idx):
         imgname = self.indices[idx]
         imgobj = self.filedict[imgname]
-        ilabel = self.classes.index(imgobj.label)
+        ilabel = self.label_to_idx[imgobj.label]
         image = imgobj.get().to(self.device)
 
         return image, ilabel
@@ -66,14 +67,13 @@ class WikiArtModel(nn.Module):
     def __init__(self, num_classes=27):
         super().__init__()
 
-        self.conv2d = nn.Conv2d(3, 1, (4,4), padding=1)
-        self.maxpool2d = nn.MaxPool2d((4,4), padding=1)
+        self.conv2d = nn.Conv2d(3, 1, (4,4), padding=2)
+        self.maxpool2d = nn.MaxPool2d((4,4), padding=2)
         self.flatten = nn.Flatten()
-        self.batchnorm1d = nn.BatchNorm1d(104*104)
-        self.linear1 = nn.Linear(104*104, int(104*104/10))
+        self.batchnorm1d = nn.BatchNorm1d(105*105)
+        self.linear1 = nn.Linear(105*105, 300)
         self.dropout = nn.Dropout(0.01)
         self.relu = nn.ReLU()
-        self.linear15 = nn.Linear(int(104*104/10), 300)
         self.linear2 = nn.Linear(300, num_classes)  # 27
         self.softmax = nn.LogSoftmax(dim=1)
 
@@ -87,8 +87,6 @@ class WikiArtModel(nn.Module):
         #print("poolout {}".format(output.size()))        
         output = self.linear1(output)
         output = self.dropout(output)
-        output = self.relu(output)
-        output = self.linear15(output)
         output = self.relu(output)
         output = self.linear2(output)
         return self.softmax(output)
