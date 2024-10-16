@@ -91,6 +91,13 @@ __
 
 ## Part 1
 
+- Account for imbalanced classes by using nn.NLLLoss()'s weight parameter to weight the loss per-class inverse to the class' frequency (https://medium.com/@zergtant/use-weighted-loss-function-to-solve-imbalanced-data-classification-problems-749237f38b75, Oct 16)
+
+Changes:
+- label_counts dict attribute added in WikiArtDataset: Absolute frequency of each arttype in data
+- class_weights dict & weights tensor added in train.py train() function
+- weights tensor of length=n_classes passed to NLLLoss function
+
 ___
 
 ## Part 2

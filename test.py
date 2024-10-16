@@ -14,7 +14,8 @@ import json
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-c", "--config", help="configuration file", default="config.json")
+parser.add_argument("-c", "--config", help="configuration file",
+                    default="config.json")
 
 args = parser.parse_args()
 
@@ -35,7 +36,6 @@ def test(modelfile=None, device="cpu"):
     model = WikiArtModel()
     model.load_state_dict(torch.load(modelfile, weights_only=True))
     model = model.to(device)
-    model.eval()
 
     predictions = []
     truth = []
@@ -51,10 +51,16 @@ def test(modelfile=None, device="cpu"):
     predictions = torch.concat(predictions)
     truth = torch.concat(truth)
     metric = metrics.MulticlassAccuracy()
-    metric.update(predictions, truth)
-    print("Accuracy: {}".format(metric.compute()))
-    confusion = metrics.MulticlassConfusionMatrix(27)
-    confusion.update(predictions, truth)
-    print("Confusion Matrix\n{}".format(confusion.compute()))
-    
+    c=0
+    for i, val in enumerate(truth):
+        if val == predictions[1]:
+            c+=1
+    print(c, len(truth))
+            
+    # metric.update(predictions, truth)
+    # print("Accuracy: {}".format(metric.compute()))
+    # confusion = metrics.MulticlassConfusionMatrix(27)
+    # confusion.update(predictions, truth)
+    # print("Confusion Matrix\n{}".format(confusion.compute()))
+
 test(modelfile=config["modelfile"], device=device)

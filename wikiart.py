@@ -20,7 +20,8 @@ class WikiArtImage:
 
     def get(self):
         if not self.loaded:
-            self.image = read_image(os.path.join(self.imgdir, self.label, self.filename)).float()
+            self.image = read_image(os.path.join(self.imgdir, self.label,
+                                                 self.filename)).float()
             self.loaded = True
 
         return self.image
@@ -31,6 +32,7 @@ class WikiArtDataset(Dataset):
         filedict = {}
         indices = []
         classes = set()
+        label_counts = dict()
         print("Gathering files for {}".format(imgdir))
         for item in walking:
             sys.stdout.write('.')
@@ -38,6 +40,7 @@ class WikiArtDataset(Dataset):
             artfiles = item[2]
             for art in artfiles:
                 filedict[art] = WikiArtImage(imgdir, arttype, art)
+                label_counts[arttype] = label_counts.get(arttype, 0) +1
                 indices.append(art)
                 classes.add(arttype)
         print("...finished")
@@ -46,6 +49,7 @@ class WikiArtDataset(Dataset):
         self.indices = indices
         self.classes = list(classes)
         self.device = device
+        self.label_counts = label_counts
         
     def __len__(self):
         return len(self.filedict)
@@ -62,14 +66,15 @@ class WikiArtModel(nn.Module):
     def __init__(self, num_classes=27):
         super().__init__()
 
-        self.conv2d = nn.Conv2d(3, 1, (4,4), padding=2)
-        self.maxpool2d = nn.MaxPool2d((4,4), padding=2)
+        self.conv2d = nn.Conv2d(3, 1, (4,4), padding=1)
+        self.maxpool2d = nn.MaxPool2d((4,4), padding=1)
         self.flatten = nn.Flatten()
-        self.batchnorm1d = nn.BatchNorm1d(105*105)
-        self.linear1 = nn.Linear(105*105, 300)
+        self.batchnorm1d = nn.BatchNorm1d(104*104)
+        self.linear1 = nn.Linear(104*104, int(104*104/10))
         self.dropout = nn.Dropout(0.01)
         self.relu = nn.ReLU()
-        self.linear2 = nn.Linear(300, num_classes)
+        self.linear15 = nn.Linear(int(104*104/10), 300)
+        self.linear2 = nn.Linear(300, num_classes)  # 27
         self.softmax = nn.LogSoftmax(dim=1)
 
     def forward(self, image):
@@ -82,6 +87,8 @@ class WikiArtModel(nn.Module):
         #print("poolout {}".format(output.size()))        
         output = self.linear1(output)
         output = self.dropout(output)
+        output = self.relu(output)
+        output = self.linear15(output)
         output = self.relu(output)
         output = self.linear2(output)
         return self.softmax(output)
