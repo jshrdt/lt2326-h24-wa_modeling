@@ -2,7 +2,7 @@ import sys
 import os
 import torch
 import torch.nn as nn
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset, DataLoader, WeightedRandomSampler
 from torchvision.io import read_image
 import matplotlib.pyplot as plt
 import torchvision.transforms.functional as F
@@ -37,19 +37,23 @@ traindataset = WikiArtDataset(trainingdir, device)
 # print("Label of img 5 is {}".format(the_label))
 # the_showable_image.show()
 
-
-def train(epochs=3, batch_size=32, modelfile=None, device="cpu"):
+def train(epochs=3, batch_size=32, modelfile=None, device="cpu",
+          mode=None):
     loader = DataLoader(traindataset, batch_size=batch_size, shuffle=True)
-    model = WikiArtModel().to(device)
+    model = WikiArtModel(mode=mode).to(device)
     optimizer = Adam(model.parameters(), lr=0.01)
-    # https://medium.com/@zergtant/use-weighted-loss-function-to-solve-imbalanced-data-classification-problems-749237f38b75
-    class_weights = {arttype: (len(traindataset.filedict) 
-                               / (traindataset.label_counts[arttype]
-                                  ))
-                               for arttype in traindataset.label_counts}
-    weights = torch.tensor(list(class_weights.values()))
-        #? normalise 2 sum to 1?
-    criterion = nn.NLLLoss(weight=weights).to(device)
+
+    class_weights1 = [(len(traindataset.filedict)
+                       /traindataset.label_counts[label]
+                       / len(traindataset.classes))
+                      for label in traindataset.classes]
+    class_weights2 = [(len(traindataset.filedict)
+                       /traindataset.label_counts[label])
+                      for label in traindataset.classes]
+    class_weights3 = [1 / traindataset.label_counts[label]
+                      for label in traindataset.classes]
+    criterion = nn.NLLLoss(weight=torch.Tensor(class_weights3)).to(device)
+    # weight = torch.Tensor(class_weights1)
 
     for epoch in range(epochs):
         print("Starting epoch {}".format(epoch))
@@ -72,4 +76,5 @@ def train(epochs=3, batch_size=32, modelfile=None, device="cpu"):
     return model
 
 model = train(config["epochs"], config["batch_size"],
-              modelfile=config["modelfile"], device=device)
+              modelfile=config["modelfile"], device=device,
+              mode=config["mode"])

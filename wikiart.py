@@ -9,7 +9,6 @@ import torchvision.transforms.functional as F
 from torch.optim import Adam
 import tqdm
 
-
 class WikiArtImage:
     def __init__(self, imgdir, label, filename):
         self.imgdir = imgdir
@@ -33,6 +32,7 @@ class WikiArtDataset(Dataset):
         indices = []
         classes = set()
         label_counts = dict()
+        labels = list()
         print("Gathering files for {}".format(imgdir))
         for item in walking:
             sys.stdout.write('.')
@@ -43,14 +43,16 @@ class WikiArtDataset(Dataset):
                 label_counts[arttype] = label_counts.get(arttype, 0) +1
                 indices.append(art)
                 classes.add(arttype)
+                labels.append(arttype)
         print("...finished")
         self.filedict = filedict
         self.imgdir = imgdir
         self.indices = indices
-        self.classes = list(classes)
+        self.classes = sorted(list(classes))
         self.device = device
         self.label_counts = label_counts
-        self.label_to_idx = {label: i for i, label in enumerate(sorted(list(classes)))}
+        self.label_to_idx = {label: i for i, label in enumerate(self.classes)}
+        self.labels = [self.label_to_idx[label] for label in labels]
 
     def __len__(self):
         return len(self.filedict)
@@ -64,29 +66,41 @@ class WikiArtDataset(Dataset):
         return image, ilabel
 
 class WikiArtModel(nn.Module):
-    def __init__(self, num_classes=27):
+    def __init__(self, mode=None, num_classes=27):
         super().__init__()
+        self.mode = mode
+        if self.mode == 'bonusA':
+            self.conv2d = nn.Conv2d(3, 1, (4,4), padding=2)
+            self.pool = nn.AdaptiveAvgPool2d((50,50))
+            self.flatten = nn.Flatten()
+            self.batchnorm1d = nn.BatchNorm1d(50*50)
+            self.linear1 = nn.Linear(50*50, 300)
+            self.dropout = nn.Dropout(0.01)
+            self.activfunc = nn.Sigmoid()
+            self.linear2 = nn.Linear(300, num_classes)  # 27
+            self.softmax = nn.LogSoftmax(dim=1)
 
-        self.conv2d = nn.Conv2d(3, 1, (4,4), padding=2)
-        self.maxpool2d = nn.MaxPool2d((4,4), padding=2)
-        self.flatten = nn.Flatten()
-        self.batchnorm1d = nn.BatchNorm1d(105*105)
-        self.linear1 = nn.Linear(105*105, 300)
-        self.dropout = nn.Dropout(0.01)
-        self.relu = nn.ReLU()
-        self.linear2 = nn.Linear(300, num_classes)  # 27
-        self.softmax = nn.LogSoftmax(dim=1)
+        else:
+            self.conv2d = nn.Conv2d(3, 1, (4,4), padding=2)
+            self.pool = nn.MaxPool2d((4,4), padding=2)
+            self.flatten = nn.Flatten()
+            self.batchnorm1d = nn.BatchNorm1d(105*105)
+            self.linear1 = nn.Linear(105*105, 300)
+            self.dropout = nn.Dropout(0.01)
+            self.activfunc = nn.ReLU()
+            self.linear2 = nn.Linear(300, num_classes)  # 27
+            self.softmax = nn.LogSoftmax(dim=1)
 
     def forward(self, image):
         output = self.conv2d(image)
         #print("convout {}".format(output.size()))
-        output = self.maxpool2d(output)
+        output = self.pool(output)
         #print("poolout {}".format(output.size()))        
         output = self.flatten(output)
         output = self.batchnorm1d(output)
         #print("poolout {}".format(output.size()))        
         output = self.linear1(output)
         output = self.dropout(output)
-        output = self.relu(output)
+        output = self.activfunc(output)
         output = self.linear2(output)
         return self.softmax(output)
