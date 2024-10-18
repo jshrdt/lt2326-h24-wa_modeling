@@ -9,6 +9,8 @@ import torchvision.transforms.functional as F
 from torch.optim import Adam
 import tqdm
 
+import random
+
 class WikiArtImage:
     def __init__(self, imgdir, label, filename):
         self.imgdir = imgdir
@@ -48,10 +50,12 @@ class WikiArtDataset(Dataset):
         self.filedict = filedict
         self.imgdir = imgdir
         self.indices = indices
+       # random.shuffle(indices)
         self.classes = sorted(list(classes))
         self.device = device
         self.label_counts = label_counts
         self.label_to_idx = {label: i for i, label in enumerate(self.classes)}
+        self.labels_str = labels
         self.labels = [self.label_to_idx[label] for label in labels]
 
     def __len__(self):
@@ -104,3 +108,31 @@ class WikiArtModel(nn.Module):
         output = self.activfunc(output)
         output = self.linear2(output)
         return self.softmax(output)
+    
+class WikiArtPart2(nn.Module):
+    def __init__(self, num_classes=27):
+        super().__init__()
+        self.encoder = nn.Sequential(
+            nn.Conv2d(3, 1, kernel_size=5),
+            nn.ReLU(True),
+            nn.Conv2d(1,6,kernel_size=5),
+            nn.ReLU(True))
+        self.decoder = nn.Sequential(             
+            nn.ConvTranspose2d(6,1,kernel_size=5),
+            nn.ReLU(True),
+            nn.ConvTranspose2d(1,3,kernel_size=5),
+            nn.ReLU(True))
+        #self.flatten = nn.Flatten()
+       # self.linear1 = nn.Linear(519168, num_classes)
+       # self.sigmoid = nn.Sigmoid()
+
+
+    def forward(self, x):
+        x = self.encoder(x)
+        x = self.decoder(x)
+      #  x = self.flatten(x)
+       # x = self.linear1(x)
+       # x = self.sigmoid(x)
+
+        return x
+    

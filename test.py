@@ -30,17 +30,17 @@ print("Running...")
 #traindataset = WikiArtDataset(trainingdir, device)
 testingdataset = WikiArtDataset(testingdir, device)
 
-def test(modelfile=None, device="cpu"):
+def test(modelfile=None, device="cpu", mode=None):
     loader = DataLoader(testingdataset, batch_size=1)
 
-    model = WikiArtModel()
+    model = WikiArtModel(mode=mode)
     model.load_state_dict(torch.load(modelfile, weights_only=True))
     model = model.to(device)
     model.eval()
 
     predictions = []
     truth = []
-    for batch_id, batch in enumerate(tqdm.tqdm(loader)):
+    for batch in tqdm.tqdm(loader):
         X, y = batch
         y = y.to(device)
         output = model(X)
@@ -57,6 +57,6 @@ def test(modelfile=None, device="cpu"):
     print("Accuracy: {}".format(metric.compute()))
     confusion = metrics.MulticlassConfusionMatrix(27)
     confusion.update(predictions, truth)
-    print("Confusion Matrix\n{}".format(confusion.compute()))
+    #print("Confusion Matrix\n{}".format(confusion.compute()))
 
-test(modelfile=config["modelfile"], device=device)
+test(modelfile=config["modelfile"], device=device, mode=config["mode"])

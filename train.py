@@ -39,23 +39,31 @@ traindataset = WikiArtDataset(trainingdir, device)
 
 def train(epochs=3, batch_size=32, modelfile=None, device="cpu",
           mode=None):
-    loader = DataLoader(traindataset, batch_size=batch_size, shuffle=True)
-    model = WikiArtModel(mode=mode).to(device)
-    optimizer = Adam(model.parameters(), lr=0.01)
-
     class_weights1 = [(len(traindataset.filedict)
                        /traindataset.label_counts[label]
                        / len(traindataset.classes))
                       for label in traindataset.classes]
+    class_weights3 = [1 / traindataset.label_counts[label]
+                      for label in traindataset.labels_str]
+
     class_weights2 = [(len(traindataset.filedict)
                        /traindataset.label_counts[label])
                       for label in traindataset.classes]
-    class_weights3 = [1 / traindataset.label_counts[label]
-                      for label in traindataset.classes]
-    criterion = nn.NLLLoss(weight=torch.Tensor(class_weights3)).to(device)
+    
+    samples_weight = torch.Tensor(class_weights3)
+    sampler = WeightedRandomSampler(weights=samples_weight,
+                                    num_samples=len(traindataset))
+
+    loader = DataLoader(traindataset, batch_size=batch_size, sampler=sampler)
+    model = WikiArtModel(mode=mode).to(device)
+    optimizer = Adam(model.parameters(), lr=0.01)
+
+    
+    criterion = nn.NLLLoss().to(device)
     # weight = torch.Tensor(class_weights1)
 
     for epoch in range(epochs):
+
         print("Starting epoch {}".format(epoch))
         accumulate_loss = 0
         for batch_id, batch in enumerate(tqdm.tqdm(loader)):
@@ -67,6 +75,14 @@ def train(epochs=3, batch_size=32, modelfile=None, device="cpu",
             loss.backward()
             accumulate_loss += loss
             optimizer.step()
+        
+        # for c in traindataset.classes:
+        #     print(c,traindataset.label_counts[c],
+        #           1/traindataset.label_counts[c],
+        #           1/traindataset.label_counts[c],
+        #           all_y.count(traindataset.label_to_idx[c]),
+        #                          )
+       # print((len(all_y)))
 
         print("In epoch {}, loss = {}".format(epoch, accumulate_loss))
 
