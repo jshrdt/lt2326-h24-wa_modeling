@@ -1,6 +1,7 @@
 {
     "modelfile": "wikiart.pth",
     "modelfile2": "wikiart2.pth",
+    "encodingsfile": "wiki_encodings.npy",
     "trainingdir": "/scratch/lt2326-2926-h24/wikiart/train",
     "testingdir": "/scratch/lt2326-2926-h24/wikiart/test",
     "device": "cuda:3",

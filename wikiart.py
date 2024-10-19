@@ -114,25 +114,27 @@ class WikiArtPart2(nn.Module):
         super().__init__()
         self.encoder = nn.Sequential(
             nn.Conv2d(3, 1, kernel_size=5),
-            nn.ReLU(True),
-            nn.Conv2d(1,6,kernel_size=5),
-            nn.ReLU(True))
+            nn.ReLU(),
+            nn.Conv2d(1,3, kernel_size=5),
+            nn.ReLU())
         self.decoder = nn.Sequential(             
-            nn.ConvTranspose2d(6,1,kernel_size=5),
-            nn.ReLU(True),
-            nn.ConvTranspose2d(1,3,kernel_size=5),
-            nn.ReLU(True))
+            nn.ConvTranspose2d(3,1, kernel_size=5),
+            nn.ReLU(),
+            nn.ConvTranspose2d(1,3, kernel_size=5),
+            nn.ReLU())
         #self.flatten = nn.Flatten()
        # self.linear1 = nn.Linear(519168, num_classes)
        # self.sigmoid = nn.Sigmoid()
 
 
-    def forward(self, x):
-        x = self.encoder(x)
-        x = self.decoder(x)
+    def forward(self, x, return_encoded=False):
+        encoded = self.encoder(x)
+        decoded = self.decoder(encoded)
       #  x = self.flatten(x)
        # x = self.linear1(x)
        # x = self.sigmoid(x)
-
-        return x
+        if return_encoded:
+            return encoded, decoded
+        else:
+            return decoded
     

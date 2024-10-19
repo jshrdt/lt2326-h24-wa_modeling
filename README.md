@@ -94,12 +94,12 @@ ___
 
 ## Part 2
 
-Tracking progress with MSE_loss
+Tracking progress with MSE_loss, no weights
 In epoch 0, loss = 8008896.0
 In epoch 1, loss = 7634572.0
 In epoch 19, loss = 3141018.5
 
-With weights
+With weights (fixed)
 Starting epoch 0
 100%|███████████████████████████████████████████████| 418/418 [00:47<00:00,  8.72it/s]
 In epoch 0, loss = 872118.375
