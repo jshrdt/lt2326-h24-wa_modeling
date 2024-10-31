@@ -4,8 +4,8 @@
     "encodingsfile": "wiki_encodings.npy",
     "trainingdir": "/scratch/lt2326-2926-h24/wikiart/train",
     "testingdir": "/scratch/lt2326-2926-h24/wikiart/test",
-    "device": "cuda:1",
-    "epochs": 20,
+    "device": "cuda:3",
+    "epochs": 5,
     "batch_size": 32,
     "mode": "bonusA"
 }

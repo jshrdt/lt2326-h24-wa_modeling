@@ -95,20 +95,31 @@ ___
 
 ## Part 2
 
-### Autoencoder
+### Autoencoder (class WikiArtPart2, in wikiart.py)
 
-For the encoder I used two convolutional layers (3->9->3 channels, kernel size 5), each followed by a max pooling layer (kernel size & stride 2) to reduce the image size. The activation function between the two Conv2d/pooling pairs was relu.  
-In the decoder the encoder's structure was mirrored by two pairs consisting of a transposed convolutional layer followed by an upsampling layer (scale=2) to reconstruct the original input size. The activation function between the pairs was once again relu and final layer in the decoder employed the sigmoid function.  
+For the encoder I used two convolutional layers (3->9->3 channels, kernel size 5), each followed by a max pooling layer (kernel size & stride 2) to reduce the image size to 6,25% of the original size (from (3,416,416) to (3,104,104). The activation function between the two Conv2d/pooling pairs was relu.  
+In the decoder, the encoder's structure was mirrored by two pairs consisting of a transposed convolutional layer followed by an upsampling layer (scale=2) to reconstruct the original input size. The activation function between the pairs was once again relu and the decoder's final layer employed the sigmoid function.  
 
-Progress was measured by loss values (MSE_loss) and plotting the encoded and decoded images, as well as comparison of the latter to the original image from the dataset.
+Progress was measured by loss values (MSE_loss, initial value, change across epochs, approximate converging value) and plotting the encoded and decoded images, as well as comparison of the latter to the original image from the dataset.
 
 Some experiments with increasing the amount of channels, adding more pairs of convolutional/pooling layers, varying the pooling type, or interspersing layers with more activation functions did not appear to improve performance further. Of my experiments, the structure above was the only one able to retrieve some of the original colours. Reducing the channel size below 3 at any point in the encoder made it impossible to retrieve proper colour values in decoding. 
 
 Input images were also rescaled to range [0,1] via division by 255 just after reading the image in the WikiArtImage.get() call.
 
-Performance as indicated by loss was fairly constant with the decoded image being easily recognisable/readable, but occasionally suffered in colour quality
+Performance as indicated by loss was fairly constant (initial: ~4, reaching and converging around ~1.8 after about 5 epochs; when run for 10 epochs) with the decoded image being easily recognisable/readable, but occasionally suffered in colour quality
 
-??Converges after five epochs, loss around 1.9
+### Autoencoder output
+
+Original image  
+![alt text](https://github.com/jshrdt/lt2326-h24-wa_modeling/blob/main/img4_original.png?raw=true)
+
+Decoded image
+![alt text](https://github.com/jshrdt/lt2326-h24-wa_modeling/blob/main/img4_decoded.png?raw=true)
+
+Encoded image
+![alt text](https://github.com/jshrdt/lt2326-h24-wa_modeling/blob/main/img4_encoded.png?raw=true)
+
+
 
 ### Clustering
 

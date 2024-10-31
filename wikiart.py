@@ -9,7 +9,6 @@ import torchvision.transforms.functional as F
 from torch.optim import Adam
 import tqdm
 
-import random
 
 class WikiArtImage:
     def __init__(self, imgdir, label, filename):
@@ -23,8 +22,6 @@ class WikiArtImage:
         if not self.loaded:
             self.image = read_image(os.path.join(self.imgdir, self.label,
                                                  self.filename)).float()/255
-            #print(os.path.join(self.imgdir, self.label,
-             #                                    self.filename))
             self.loaded = True
 
         return self.image
@@ -52,7 +49,6 @@ class WikiArtDataset(Dataset):
         self.filedict = filedict
         self.imgdir = imgdir
         self.indices = indices
-       # random.shuffle(indices)
         self.classes = sorted(list(classes))
         self.device = device
         self.label_counts = label_counts
@@ -110,7 +106,8 @@ class WikiArtModel(nn.Module):
         output = self.activfunc(output)
         output = self.linear2(output)
         return self.softmax(output)
-    
+
+
 class WikiArtPart2(nn.Module):
     def __init__(self, num_classes=27):
         super().__init__()
@@ -130,12 +127,11 @@ class WikiArtPart2(nn.Module):
             nn.Sigmoid()
             )
 
-
-    def forward(self, x, return_encoded=False):
-        encoded = self.encoder(x)
-        decoded = self.decoder(encoded)
-
-        if return_encoded:
-            return encoded, decoded
-        else:
+    def forward(self, x, decode_only=False):
+        if decode_only:
+            decoded = self.decoder(x)
             return decoded
+        else:
+            encoded = self.encoder(x)
+            decoded = self.decoder(encoded)
+            return encoded, decoded

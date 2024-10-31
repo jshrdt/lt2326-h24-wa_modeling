@@ -18,7 +18,6 @@ parser.add_argument("-c", "--config", help="configuration file",
                     default="config.json")
 
 args = parser.parse_args()
-
 config = json.load(open(args.config))
 
 trainingdir = config["trainingdir"]
@@ -28,15 +27,7 @@ device = config["device"]
 print("Running...")
 
 traindataset = WikiArtDataset(trainingdir, device)
-#testingdataset = WikiArtDataset(testingdir, device)
 
-
-#the_image, the_label = traindataset[5]
-#print(the_image, the_image.size())
-
-# the_showable_image = F.to_pil_image(the_image)
-# print("Label of img 5 is {}".format(the_label))
-# the_showable_image.show()
 
 def train(epochs=3, batch_size=32, modelfile=None, device="cpu"):
     class_weights = torch.Tensor([1 / traindataset.label_counts[label]
@@ -56,10 +47,8 @@ def train(epochs=3, batch_size=32, modelfile=None, device="cpu"):
         accumulate_loss = 0
         for batch_id, batch in enumerate(tqdm.tqdm(loader)):
             X, _ = batch
-           # print(X.shape)
             optimizer.zero_grad()
-            output = model(X)
-           # print(output.shape)
+            _, output = model(X)
             loss = criterion(output, X)
             loss.backward()
             accumulate_loss += loss
