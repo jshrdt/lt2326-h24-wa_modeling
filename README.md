@@ -94,76 +94,54 @@ ___
 
 ## Part 2
 
-Tracking progress with MSE_loss, no weights
-In epoch 0, loss = 8008896.0
-In epoch 1, loss = 7634572.0
-In epoch 19, loss = 3141018.5
+For the auto encoder I used a mix of convolutional (nn.Conv2d, nn.ConvTranspose2d in decoder) and max pooling layers (nn.MaxPool, nn.Upsample in decoder) with nn.ReLU as the activation function in between them; and the decoder ending with nn.Sigmoid for the prediction and learning.
 
-With weights (fixed)
+Progress I tracked with MSE_loss (no weights) as well as by plotting the decoded inputs of the model after training.
+
+Convolutional layers and relu on their own were quite capable of reconstructing the image and producing even a readable encoded representation – though perhaps not surprisingly so, as they did little to reduce the image's dimensionality.
+
+For this reason I included maxPooling (stride=2) in the encoder, and upsampling (scale=2) in the decoder, to arrive at a more compressed encoded representation.
+
+Input was also rescaled to range [0,1] via division by 255.
+
+Adding a third group of ReLU, Conv2d, and MaxPool/AvgPool, as well as increasing channel size did appear to improve similarity in the decoded representation.
+
+Converges after five epochs, loss around 1.9
+
+---
+
+Adapted cone encoder network
+
+cju@GU.GU.SE@mltgpu:/srv/data/gussucju$  cd /srv/data/gussucju ; /usr/bin/env /bin/python3 /home/gussucju@GU.GU.SE/.vscode-server/extensions/ms-python.debugpy-2024.12.0-linux-x64/bundled/libs/debugpy/adapter/../../debugpy/launcher 51969 -- /srv/data/gussucju/train2.py 
+Running...
+Gathering files for /scratch/lt2326-2926-h24/wikiart/train
+...............................finished
 Starting epoch 0
-100%|███████████████████████████████████████████████| 418/418 [00:47<00:00,  8.72it/s]
-In epoch 0, loss = 872118.375
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 418/418 [01:15<00:00,  5.55it/s]
+In epoch 0, loss = 36.53696823120117
 Starting epoch 1
-100%|███████████████████████████████████████████████| 418/418 [00:39<00:00, 10.61it/s]
-In epoch 1, loss = 558129.4375
+ 27%|████████████████████████████████████▋                                                                                                    | 112/418 [00:18<00:49,  6.22it/s]gussucju@GU.GU.SE@mltgpu:/srv/data/gussucju$ ^C
+
+gussucju@GU.GU.SE@mltgpu:/srv/data/gussucju$  cd /srv/data/gussucju ; /usr/bin/env /bin/python3 /home/gussucju@GU.GU.SE/.vscode-server/extensions/ms-python.debugpy-2024.12.0-linux-x64/bundled/libs/debugpy/adapter/../../debugpy/launcher 45149 -- /srv/data/gussucju/train2.py 
+Running...
+Gathering files for /scratch/lt2326-2926-h24/wikiart/train
+...............................finished
+Starting epoch 0
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 418/418 [01:16<00:00,  5.44it/s]
+In epoch 0, loss = 9.039575576782227
+Starting epoch 1
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 418/418 [01:07<00:00,  6.17it/s]
+In epoch 1, loss = 4.215548992156982
 Starting epoch 2
-100%|███████████████████████████████████████████████| 418/418 [00:37<00:00, 11.10it/s]
-In epoch 2, loss = 563921.0
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 418/418 [01:06<00:00,  6.32it/s]
+In epoch 2, loss = 3.8134214878082275
 Starting epoch 3
-100%|███████████████████████████████████████████████| 418/418 [00:37<00:00, 11.29it/s]
-In epoch 3, loss = 524050.90625
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 418/418 [01:05<00:00,  6.38it/s]
+In epoch 3, loss = 3.6216773986816406
 Starting epoch 4
-100%|███████████████████████████████████████████████| 418/418 [00:37<00:00, 11.28it/s]
-In epoch 4, loss = 552377.125
-Starting epoch 5
-100%|███████████████████████████████████████████████| 418/418 [00:36<00:00, 11.39it/s]
-In epoch 5, loss = 488336.75
-Starting epoch 6
-100%|███████████████████████████████████████████████| 418/418 [00:36<00:00, 11.30it/s]
-In epoch 6, loss = 457745.03125
-Starting epoch 7
-100%|███████████████████████████████████████████████| 418/418 [00:36<00:00, 11.49it/s]
-In epoch 7, loss = 422301.53125
-Starting epoch 8
-100%|███████████████████████████████████████████████| 418/418 [00:37<00:00, 11.23it/s]
-In epoch 8, loss = 422724.125
-Starting epoch 9
-100%|███████████████████████████████████████████████| 418/418 [00:37<00:00, 11.18it/s]
-In epoch 9, loss = 412149.9375
-Starting epoch 10
-100%|███████████████████████████████████████████████| 418/418 [00:36<00:00, 11.33it/s]
-In epoch 10, loss = 467776.875
-Starting epoch 11
-100%|███████████████████████████████████████████████| 418/418 [00:36<00:00, 11.37it/s]
-In epoch 11, loss = 400299.0625
-Starting epoch 12
-100%|███████████████████████████████████████████████| 418/418 [00:37<00:00, 11.24it/s]
-In epoch 12, loss = 3590890.5
-Starting epoch 13
-100%|███████████████████████████████████████████████| 418/418 [00:37<00:00, 11.29it/s]
-In epoch 13, loss = 3570933.5
-Starting epoch 14
-100%|███████████████████████████████████████████████| 418/418 [00:37<00:00, 11.03it/s]
-In epoch 14, loss = 3445841.75
-Starting epoch 15
-100%|███████████████████████████████████████████████| 418/418 [00:37<00:00, 11.16it/s]
-In epoch 15, loss = 3212219.5
-Starting epoch 16
-100%|███████████████████████████████████████████████| 418/418 [00:37<00:00, 11.12it/s]
-In epoch 16, loss = 2006531.75
-Starting epoch 17
-100%|███████████████████████████████████████████████| 418/418 [00:37<00:00, 11.28it/s]
-In epoch 17, loss = 1512574.0
-Starting epoch 18
-100%|███████████████████████████████████████████████| 418/418 [00:37<00:00, 11.22it/s]
-In epoch 18, loss = 1447257.375
-Starting epoch 19
-100%|███████████████████████████████████████████████| 418/418 [00:37<00:00, 11.28it/s]
-In epoch 19, loss = 1317430.875
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 418/418 [01:05<00:00,  6.36it/s]
+In epoch 4, loss = 3.628920078277588
 
-
-Val mit 50 epochs:
-In epoch 49, loss = 2410981.25, converged around epoch 21
 
 ## Part 3
 

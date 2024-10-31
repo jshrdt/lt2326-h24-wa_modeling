@@ -56,8 +56,10 @@ def train(epochs=3, batch_size=32, modelfile=None, device="cpu"):
         accumulate_loss = 0
         for batch_id, batch in enumerate(tqdm.tqdm(loader)):
             X, _ = batch
+           # print(X.shape)
             optimizer.zero_grad()
             output = model(X)
+           # print(output.shape)
             loss = criterion(output, X)
             loss.backward()
             accumulate_loss += loss
