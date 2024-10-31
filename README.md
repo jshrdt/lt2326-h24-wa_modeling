@@ -90,57 +90,30 @@ In epoch 0, loss = 1630.231689453125
 In epoch 1, loss = 1457.8216552734375
 In epoch 19, loss = 1428.0557861328125
 Accuracy: 0.07301587611436844
+
 ___
 
 ## Part 2
 
-For the auto encoder I used a mix of convolutional (nn.Conv2d, nn.ConvTranspose2d in decoder) and max pooling layers (nn.MaxPool, nn.Upsample in decoder) with nn.ReLU as the activation function in between them; and the decoder ending with nn.Sigmoid for the prediction and learning.
+### Autoencoder
 
-Progress I tracked with MSE_loss (no weights) as well as by plotting the decoded inputs of the model after training.
+For the encoder I used two convolutional layers (3->9->3 channels, kernel size 5), each followed by a max pooling layer (kernel size & stride 2) to reduce the image size. The activation function between the two Conv2d/pooling pairs was relu.  
+In the decoder the encoder's structure was mirrored by two pairs consisting of a transposed convolutional layer followed by an upsampling layer (scale=2) to reconstruct the original input size. The activation function between the pairs was once again relu and final layer in the decoder employed the sigmoid function.  
 
-Convolutional layers and relu on their own were quite capable of reconstructing the image and producing even a readable encoded representation – though perhaps not surprisingly so, as they did little to reduce the image's dimensionality.
+Progress was measured by loss values (MSE_loss) and plotting the encoded and decoded images, as well as comparison of the latter to the original image from the dataset.
 
-For this reason I included maxPooling (stride=2) in the encoder, and upsampling (scale=2) in the decoder, to arrive at a more compressed encoded representation.
+Some experiments with increasing the amount of channels, adding more pairs of convolutional/pooling layers, varying the pooling type, or interspersing layers with more activation functions did not appear to improve performance further. Of my experiments, the structure above was the only one able to retrieve some of the original colours. Reducing the channel size below 3 at any point in the encoder made it impossible to retrieve proper colour values in decoding. 
 
-Input was also rescaled to range [0,1] via division by 255.
+Input images were also rescaled to range [0,1] via division by 255 just after reading the image in the WikiArtImage.get() call.
 
-Adding a third group of ReLU, Conv2d, and MaxPool/AvgPool, as well as increasing channel size did appear to improve similarity in the decoded representation.
+Performance as indicated by loss was fairly constant with the decoded image being easily recognisable/readable, but occasionally suffered in colour quality
 
-Converges after five epochs, loss around 1.9
+??Converges after five epochs, loss around 1.9
+
+### Clustering
 
 ---
 
-Adapted cone encoder network
-
-cju@GU.GU.SE@mltgpu:/srv/data/gussucju$  cd /srv/data/gussucju ; /usr/bin/env /bin/python3 /home/gussucju@GU.GU.SE/.vscode-server/extensions/ms-python.debugpy-2024.12.0-linux-x64/bundled/libs/debugpy/adapter/../../debugpy/launcher 51969 -- /srv/data/gussucju/train2.py 
-Running...
-Gathering files for /scratch/lt2326-2926-h24/wikiart/train
-...............................finished
-Starting epoch 0
-100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 418/418 [01:15<00:00,  5.55it/s]
-In epoch 0, loss = 36.53696823120117
-Starting epoch 1
- 27%|████████████████████████████████████▋                                                                                                    | 112/418 [00:18<00:49,  6.22it/s]gussucju@GU.GU.SE@mltgpu:/srv/data/gussucju$ ^C
-
-gussucju@GU.GU.SE@mltgpu:/srv/data/gussucju$  cd /srv/data/gussucju ; /usr/bin/env /bin/python3 /home/gussucju@GU.GU.SE/.vscode-server/extensions/ms-python.debugpy-2024.12.0-linux-x64/bundled/libs/debugpy/adapter/../../debugpy/launcher 45149 -- /srv/data/gussucju/train2.py 
-Running...
-Gathering files for /scratch/lt2326-2926-h24/wikiart/train
-...............................finished
-Starting epoch 0
-100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 418/418 [01:16<00:00,  5.44it/s]
-In epoch 0, loss = 9.039575576782227
-Starting epoch 1
-100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 418/418 [01:07<00:00,  6.17it/s]
-In epoch 1, loss = 4.215548992156982
-Starting epoch 2
-100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 418/418 [01:06<00:00,  6.32it/s]
-In epoch 2, loss = 3.8134214878082275
-Starting epoch 3
-100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 418/418 [01:05<00:00,  6.38it/s]
-In epoch 3, loss = 3.6216773986816406
-Starting epoch 4
-100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 418/418 [01:05<00:00,  6.36it/s]
-In epoch 4, loss = 3.628920078277588
 
 
 ## Part 3

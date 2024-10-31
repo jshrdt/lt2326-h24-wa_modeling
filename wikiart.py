@@ -114,47 +114,21 @@ class WikiArtModel(nn.Module):
 class WikiArtPart2(nn.Module):
     def __init__(self, num_classes=27):
         super().__init__()
-        
-    # works & produces 3x3 imgs  ; https://github.com/E008001/Autoencoder-in-Pytorch
-        # self.encoder = torch.nn.Sequential(
-        #    torch.nn.Conv2d(3, 16, 4, stride=1, padding=2),  # 
-        #     torch.nn.ReLU(),
-        #     torch.nn.MaxPool2d(2, stride=1),
-        #     torch.nn.Conv2d(16, 1, 4, stride=1, padding=2),  # b, 8, 3, 3
-        #     torch.nn.ReLU(),
-        #     torch.nn.MaxPool2d(2, stride=1)  # b, 8, 2, 2
-        # )
-
-        # self.decoder = torch.nn.Sequential(
-        #     torch.nn.Upsample(scale_factor=1, mode='nearest'),
-        #     torch.nn.Conv2d(1, 16, 4, stride=1,  padding=1),  # b, 16, 10, 10
-        #     torch.nn.ReLU(),
-        #     torch.nn.Upsample(scale_factor=1, mode='nearest'),
-        #     torch.nn.Conv2d(16, 3, 4, stride=1,  padding=2),  # b, 8, 3, 3
-        #     torch.nn.Sigmoid()
-        # )
-# my og
         self.encoder = nn.Sequential(
-            nn.Conv2d(3,9, kernel_size=5, padding=1),
-            nn.AvgPool2d(2, stride=2, padding=1),
-            nn.ReLU(),
-             
-            nn.Conv2d(9,3, kernel_size=5, padding=1),
+            nn.Conv2d(3, 9, kernel_size=5, padding=1),
             nn.MaxPool2d(2, stride=2, padding=1),
-            
+            nn.ReLU(),
+            nn.Conv2d(9, 3, kernel_size=5, padding=1),
+            nn.MaxPool2d(2, stride=2, padding=1),
             )
         self.decoder = nn.Sequential( 
-            nn.ConvTranspose2d(3,9, kernel_size=5, padding=2),
+            nn.ConvTranspose2d(3, 9, kernel_size=5, padding=2),
             nn.Upsample(scale_factor=2, mode='nearest'),
             nn.ReLU(),
-            
-            nn.ConvTranspose2d(9,3, kernel_size=5, padding=2),
+            nn.ConvTranspose2d(9, 3, kernel_size=5, padding=2),
             nn.Upsample(scale_factor=2, mode='nearest'),
             nn.Sigmoid()
             )
-         #   self.flatten = nn.Flatten()
-       # self.linear1 = nn.Linear(519168, num_classes)
-       # self.sigmoid = nn.Sigmoid()
 
 
     def forward(self, x, return_encoded=False):
@@ -165,4 +139,3 @@ class WikiArtPart2(nn.Module):
             return encoded, decoded
         else:
             return decoded
-    
