@@ -111,23 +111,62 @@ Performance as indicated by loss was fairly constant (initial: ~4, reaching and 
 ### Autoencoder output
 
 Original image  
-![alt text](https://github.com/jshrdt/lt2326-h24-wa_modeling/blob/main/img4_original.png?raw=true)
+(!)[alt text](https://github.com/jshrdt/lt2326-h24-wa_modeling/blob/main/img4_original.png?raw=true)
 
 Decoded image
-![alt text](https://github.com/jshrdt/lt2326-h24-wa_modeling/blob/main/img4_decoded.png?raw=true)
+(!)[alt text](https://github.com/jshrdt/lt2326-h24-wa_modeling/blob/main/img4_decoded.png?raw=true)
 
 Encoded image
-![alt text](https://github.com/jshrdt/lt2326-h24-wa_modeling/blob/main/img4_encoded.png?raw=true)
-
+(!)[alt text](https://github.com/jshrdt/lt2326-h24-wa_modeling/blob/main/img4_encoded.png?raw=true)
 
 
 ### Clustering
 
+Sources: https://www.kaggle.com/code/dhanyajothimani/basic-visualization-and-clustering-in-python
+
+First, I flattened the matrix of encoded 3D image (104,104,3) from the testset to then fit and apply sklearn's StandardScaler to all values. The scaled encodings I used to perform KMeans (n=27) clustering. Lastly, I applied PCA to the scaled encodings to reduce each image's array to a singular value in order to plot these PCA values (x-Axis) against the predicted KMeans-clusters (y-Axis). The graph I further colourcoded by the image's original gold label.
+
+? Images aligned horizontally?
+
+Images do not appear to cluster well along the x-values, but it is rather noticeable, that the gold label colours align horizontally. The colour spread not being entirely random implies that some information is still present in the encodings.
+
+Personally, I found the graph was more interpretable when plotting the true class against the PCA value & keeping the clusters colour-coded. The resulting graph also displays the class imbalance from the dataset. Further, it shows the correlation between PCA value and true class - so perhaps clustering PCA values would have been the way to go.
+
+[add imgs]
+
 ---
 
 
-
 ## Part 3
+
+To get style embeddings I initialise random embeddings of the same size as the flattened WikiArt artworks (nn.Embedding) for each of the 27 art styles. Embeddings were then trained with a rather naive auto encoder structure (class StyleEmbedder) similar to Part2, with the goal being to minimise the distance to the original image with MSE loss.
+
+
+For style transfer training, an input image was concatenated with its corresponding style embedding along axis 1 (for batched input), resulting in a new encoder input of size (batch_size, 6, 416, 416).  For style transfer, I implemented two loss functions: 
+1) MSE loss for auto encoder output and original 'content' image
+2) MSE loss for auto encoder output and style embedding
+By combining these two losses, the model is trained to retain as much information as possible from both content and style input.
+
+Output still resembled the original image, but diverged from it more strongly than in part 2. Essentially I would describe the output here as almost grey-scaling or applying a sepia filter to the original content image. This output starts making sense when inspecting the outputs from the style embeddings training: In trying to generalise over many different painting in an art style, the style representation is pushed towards a uniform grey-beige image (sort of a middle ground for all possible pixel values). Though this does not exactly represent style in a meaningful way, it seems the transfer part is working as intended.
+
+? Feature extract
+
+I feel like the issue with this assignment is that from the instructions I'm sure that 'trained embeddings for the art styles' suggests that I should initiate and train 27 embeddings of some sort, each of which represents one of the given art styles.
+From everything I've been able to seen online however, the style transfer task is only ever done on image, not painting genre, basis. I believe I have written code which technically implements the logic from the assignment instructions.
+
+
+
+
+However, unsurprisingly unable to learn anything of note really. Since we're not supposed to use pretrained models for part3, no other approach to this embeddings task came to mind. (Embeddings themselves look like noise, the  
+
+ is meant to be 
+
+
+
+Literature: 
+Gates, L. A., Ecker, A. S., Bethge, M. (2016). Image Style Transfer Using Convolutional Neural Networks. 2016 IEEE Conference on Computer Vision and Pattern Recognition (CVPR). 2414-2423. https://doi.org/10.1109/CVPR.2016.265
+
+https://pytorch.org/tutorials/advanced/neural_style_tutorial.html
 
 ___
 
