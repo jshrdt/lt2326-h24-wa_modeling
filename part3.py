@@ -8,10 +8,11 @@ import matplotlib.pyplot as plt
 import torchvision.transforms.functional as F
 from torch.optim import Adam
 import tqdm
-from wikiart import WikiArtDataset, WikiArtPart2, WikiArtPart3
+from wikiart import WikiArtDataset, WikiArtPart3
 import json
 import argparse
 import numpy as np
+import os
 
 #https://pytorch.org/tutorials/advanced/neural_style_tutorial.html
 
@@ -25,37 +26,11 @@ config = json.load(open(args.config))
 
 trainingdir = config["trainingdir"]
 testingdir = config["testingdir"]
-device = config["device"]
+device = config['device'] if torch.cuda.is_available() else 'cpu'
 
 print("Running...")
 
-traindataset = WikiArtDataset(trainingdir, device, part3=False)
-class StyleEmbedder(nn.Module):
-    def __init__(self, num_classes=27):
-        super().__init__()
-        self.style_embeds = nn.Embedding(num_classes, 416*416*3)
-        self.encoder = nn.Sequential(
-            nn.Conv2d(3, 9, kernel_size=5, padding=1),
-            nn.MaxPool2d(2, stride=2, padding=1),
-            nn.ReLU(),
-            nn.Conv2d(9, 3, kernel_size=5, padding=1),
-            nn.MaxPool2d(2, stride=2, padding=1),
-            )
-        self.decoder = nn.Sequential( 
-            nn.ConvTranspose2d(3, 9, kernel_size=5, padding=2),
-            nn.Upsample(scale_factor=2, mode='nearest'),
-            nn.ReLU(),
-            nn.ConvTranspose2d(9, 3, kernel_size=5, padding=2),
-            nn.Upsample(scale_factor=2, mode='nearest'),
-            nn.Sigmoid()
-            )
-    def forward(self, style_idx):
-        style_embed = self.style_embeds(style_idx).reshape(
-            style_idx.size()[0], 3, 416, 416)
-        style_encode = self.encoder(style_embed)
-        style_decode = self.decoder(style_encode)
-
-        return style_encode, style_decode
+traindataset = WikiArtDataset(trainingdir, device)
 
 # def gram_matrix(input):
 #     a, b, c, d = input.size()  # a=batch size(=1)
@@ -72,92 +47,46 @@ class StyleEmbedder(nn.Module):
 
 #     return res
 
-def train_embeds(loader, epochs=5, modelfile=None, device="cpu"):
-    print('get style embeds')
-    # model = WikiArtPart3(len(traindataset)).to(device)
-    model = StyleEmbedder(num_classes=27).to(device)
+def train_embeds(loader, epochs=5, device="cpu"):
+    print('\nTraining art style embeddings...')
+    model = WikiArtPart3(traindataset.style2idx, device, num_classes=27).to(device)
     optimizer = Adam(model.parameters(), lr=0.01)
-    criterion = nn.MSELoss()# nn.functional.mse_loss()
-    #criterion = nn.NLLLoss().to(device)
+    criterion = nn.MSELoss()
 
     for epoch in range(epochs):
-        encodings=list()
         print("Starting epoch {}".format(epoch))
         accumulate_loss = 0
         for batch_id, batch in enumerate(tqdm.tqdm(loader)):
             optimizer.zero_grad()
             X, y = batch
-            
-            encoded, output = model(y.to(device)) #y to select style embedding (out of n=27 classes)
-            
+            _, output = model(y.to(device), train_embeds=True) #y to select style embedding (out of n=27 classes)
             style_loss = criterion(output, X)
             style_loss.backward()
             accumulate_loss += style_loss
             optimizer.step()
-            # if batch_id>1:
-                # print(innbetween == embeds.weight)
+
         print("In epoch {}, loss = {}".format(epoch, accumulate_loss))
 
-    return model.style_embeds
-            
+    return model
 
-class WikiArtPart3(nn.Module):
-    def __init__(self, style_embeddings, num_classes=27):
-        super().__init__()
-        self.embeddings = style_embeddings
-        #print(type(style_embeddings))
-        self.encoder = nn.Sequential(
-            nn.Conv2d(6, 9, kernel_size=5, padding=1),
-            nn.MaxPool2d(2, stride=2, padding=1),
-            nn.ReLU(),
-            nn.Conv2d(9, 3, kernel_size=5, padding=1),
-            nn.MaxPool2d(2, stride=2, padding=1),
-            )
-        self.decoder = nn.Sequential( 
-            nn.ConvTranspose2d(3, 9, kernel_size=5, padding=2),
-            nn.Upsample(scale_factor=2, mode='nearest'),
-            nn.ReLU(),
-            nn.ConvTranspose2d(9, 3, kernel_size=5, padding=2),
-            nn.Upsample(scale_factor=2, mode='nearest'),
-            nn.Sigmoid()
-            )
 
-    def forward(self, x, arttype, decode_only=False):
-        if decode_only:
-            decoded = self.decoder(x)
-            return decoded
-        else:
-            if type(arttype)==str:
-                arttype = traindataset.style2idx[arttype]
-               # print(arttype, type(arttype))
-                style_embed = self.embeddings(torch.tensor(arttype).to(device)).reshape(1, 3, 416, 416)
-            else:
-                style_embed = self.embeddings(arttype.to(device)).reshape(arttype.size()[0], 3, 416, 416)
-            if len(x.size())==3:
-                x = x.reshape(1, 3, 416, 416)
-
-            input = torch.cat((x, style_embed), 1)
-            #print(input.size())
-            encoded = self.encoder(input)
-            decoded = self.decoder(encoded)
-            return encoded, decoded, style_embed
-        
-def train(loader, embeddings, epochs=5, modelfile=None, device="cpu"):
-
-    model = WikiArtPart3(embeddings, len(traindataset)).to(device)
-    optimizer = Adam(model.parameters(), lr=0.01)
+def train(loader, model, epochs=5, modelfile=None, device="cpu"):
+    print('\nTraining style transfer...')
+    # freeze embeddings layer & remove it from optimizer.
+    model.style_embeds.weight.requires_grad = False
+    optimizer = Adam([param for param in model.parameters()
+                      if param.requires_grad == True], lr=0.01)
+    # Initiliase loss for content image and artstyle.
     criterion_img = nn.MSELoss()
     criterion_style = nn.MSELoss()
-    #criterion = nn.NLLLoss().to(device)
 
     for epoch in range(epochs):
-        encodings=list()
         print("Starting epoch {}".format(epoch))
         accumulate_loss = 0
         for batch_id, batch in enumerate(tqdm.tqdm(loader)):
             optimizer.zero_grad()
             X, y = batch
-            encoded, decoded, style_embed = model(X, y)
+            encoded, decoded, style_embed = model(y, content_imgs=X)
 
             # content loss
             c_loss = criterion_img(decoded, X)
@@ -172,16 +101,24 @@ def train(loader, embeddings, epochs=5, modelfile=None, device="cpu"):
 
     if modelfile:
         torch.save(model.state_dict(), modelfile)
+        print('Model saved to file.')
 
     return model
 
-def combine(img, style):
+def combine(model, img_idx, transfer_style):
+    # run in interactive window to view example img &
+    # image post style transfer
     model.eval()
+    img = traindataset[img_idx][0]
+    altered_img = model(transfer_style, content_imgs=img)[1]
+
+    # Plot original & altered image
     fig, (ax1, ax2) = plt.subplots(1, 2)
     fig.tight_layout()
     ax1.imshow(img.numpy(force=True).transpose(1, 2, 0))
-    ax2.imshow(model(img, style)[1][0].numpy(force=True).transpose(1, 2, 0))
+    ax2.imshow(altered_img[0].numpy(force=True).transpose(1, 2, 0))
     plt.show()
+    print('--- end ---')
 
 
 if __name__=='__main__':
@@ -191,11 +128,20 @@ if __name__=='__main__':
                                     num_samples=len(traindataset))
     loader = DataLoader(traindataset, batch_size=config["batch_size"],
                         sampler=sampler)
+    # Get model
+    if os.path.isfile(config["modelfile3"]):
+        print('Loading model from file')
+        # load model with embeds layer from file
+        model = WikiArtPart3(traindataset.style2idx, device)
+        model.load_state_dict(torch.load(config["modelfile3"], weights_only=True))
+        model = model.to(device)
+        model.eval()
+    else:
+        model_with_embeds = train_embeds(loader, epochs=config['epochs'], device=device)
+        model = train(loader, model_with_embeds, epochs=config['epochs'], modelfile=config["modelfile3"],
+                       device=device)
 
-    embeds = train_embeds(loader, epochs=5, device=device) #save embeds?
+    print('Done')
 
-    model, X, encoed, decoded = train(loader, embeds, epochs=5,
-                modelfile=config["modelfile3"],
-                device=device)
-
-    #combine(X[0], 'Ukiyo_e')
+    # Run in interactive window to view original and altered image.
+    combine(model, img_idx=4, transfer_style='Ukiyo_e')

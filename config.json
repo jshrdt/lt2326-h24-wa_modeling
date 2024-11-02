@@ -1,11 +1,12 @@
 {
     "modelfile": "wikiart.pth",
     "modelfile2": "wikiart2.pth",
+    "modelfile3": "wikiart3.pth",
     "encodingsfile": "wiki_encodings.npy",
     "trainingdir": "/scratch/lt2326-2926-h24/wikiart/train",
     "testingdir": "/scratch/lt2326-2926-h24/wikiart/test",
-    "device": "cuda:3",
-    "epochs": 5,
+    "device": "cuda:1",
+    "epochs": 10,
     "batch_size": 32,
     "mode": "bonusA"
 }
