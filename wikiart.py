@@ -20,6 +20,7 @@ class WikiArtImage:
 
     def get(self):
         if not self.loaded:
+            # added rescaling to range 0-1
             self.image = read_image(os.path.join(self.imgdir, self.label,
                                                  self.filename)).float()/255
             self.loaded = True
@@ -58,7 +59,6 @@ class WikiArtDataset(Dataset):
         self.labels = [self.label_to_idx[label] for label in labels]
         # for part 3
         self.style2idx = {arttype: i for i, arttype in enumerate(self.classes)}
-        
 
     def __len__(self):
         return len(self.filedict)

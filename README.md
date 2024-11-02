@@ -111,17 +111,17 @@ By combining these two losses, the model is trained to retain as much informatio
 
 ### Results
 
-The altered image post style transfer still resembled the original image, but perhaps diverged from it more strongly than in part 2. Essentially I would describe the output here as almost applying a sepia filter to the original content image, intensity of this effect varies.  
+The altered image post style transfer still resembled the original image, but perhaps diverged from it more strongly than in part 2. Essentially I would describe the output here as almost moving towards greyscale, lessening colour intensity, or applying a sepia filter to the original content image, strength of this effect varies. Both example below were combined with the Ukiyoe style embedding.
 
 ![alt text](https://github.com/jshrdt/lt2326-h24-wa_modeling/blob/main/example_style_transfer.png?raw=true)
 
 This result starts making sense when inspecting the outputs from the style embeddings training: In trying to generalise over many different paintings in a given art style, the embedding is pushed towards a uniform grey-beige image (sort of a middle ground for all possible pixel values). Though this does not exactly represent style in a meaningful way, it seems the transfer part is working as intended.  
-This can be illustrated by modifying the transfer training loop to give more weight to the style loss (loss = content_loss + (8 * style_loss)).
+This can be illustrated by modifying the transfer training loop to give more weight to the style loss (loss = content_loss + (8 * style_loss)):
 
 ![alt text](https://github.com/jshrdt/lt2326-h24-wa_modeling/blob/main/example_style_lossX8.png?raw=true)
 
-I suspect two main factors for these results, in which the model could be improved:  
-Unsuitable gold style representation during embeddings training & art style as a basis to attempt generalisation over. The former could be improved by setting the gold standard not as the original image, but some feature representation of it (from VGG for example), or the gram matrix of said representation . As for the latter, I'm not too sure what the goal for an art style representation ought to look like, it seems more intuitive to me to attempt a style transfer from a single painting onto another one, or to perhaps create embeddings for a certain artist. Paintings from the same genre probably diverge too much as to allow proper embeddings training with the methods I have used here.
+I suspect two main factors for these results, in which the model could be improved: A) Unsuitable gold style representation during embeddings training. B) Art style as a basis to attempt generalisation over.  
+The former could be improved by setting the gold standard not as the original image, but some feature representation of it (from VGG for example), or the gram matrix of said representation . As for the latter, I'm not too sure what the goal for an art style representation ought to look like, it seems more intuitive to me to attempt a style transfer from a single painting onto another one, or to perhaps create embeddings for a certain artist. Paintings from the same genre probably diverge too much as to allow proper embeddings training with the methods I have used here.
 
 Literature:  
 Gates, L. A., Ecker, A. S., Bethge, M. (2016). Image Style Transfer Using Convolutional Neural Networks. 2016 IEEE Conference on Computer Vision and Pattern Recognition (CVPR). 2414-2423. https://doi.org/10.1109/CVPR.2016.265

@@ -5,7 +5,7 @@
     "encodingsfile": "wiki_encodings.npy",
     "trainingdir": "/scratch/lt2326-2926-h24/wikiart/train",
     "testingdir": "/scratch/lt2326-2926-h24/wikiart/test",
-    "device": "cuda:1",
+    "device": "cuda:0",
     "epochs": 10,
     "batch_size": 32,
     "mode": "bonusA"
