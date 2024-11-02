@@ -41,9 +41,9 @@ This leads me to believe that the weights work as intended, but the current arch
 (2) weight_per_class_i = amount_training_samples / frequency_class_i_in_training  
 (3) weight_per_class_i = 1 / frequency_class_i_in_training   
 
-### Some tests  
+### Some tests for weights (1-3)
 
-#### Base model  
+#### Base model
 
 (1) Accuracy: 2,06% (loss ep1: 6005, ep2: 1374, ep20: 1367)  
 (2) Accuracy: 2,06% (loss ep1: 7729, ep2: 1356(...) ep20: 1374)  
@@ -75,28 +75,26 @@ Input images were also rescaled to range [0,1] via division by 255 just after re
 
 Performance as indicated by loss was fairly constant (initial: ~4, reaching and converging around ~1.8 after about 5 epochs; when run for 10 epochs) with the decoded image being easily recognisable/readable, but occasionally suffering in colour quality.  
 
-### Autoencoder output
+#### Autoencoder output
 
 ![alt text](https://github.com/jshrdt/lt2326-h24-wa_modeling/blob/main/part2_example_img.png?raw=true)
 
-
 ### Clustering
 
-First, I flattened the matrix of encoded 3D image (104,104,3) from the testset to then fit and apply sklearn's StandardScaler to all values. The scaled encodings I used to perform KMeans (n=27) clustering. Lastly, I applied PCA to the scaled encodings to reduce each image's array to a singular value in order to plot these PCA values (x-Axis) against the predicted KMeans-clusters (y-Axis). The graph I further colourcoded by the image's original gold label.
+First, I encoded the images in the test set using the model above, I then flattened this matrix of encoded images (len_test_set, 3, 104, 104) to fit and apply sklearn's StandardScaler to all its values. On the scaled encodings I performed KMeans (n=27) clustering. Lastly, I applied PCA to the scaled encodings to reduce each image's array to a singular value in order to plot these PCA values (x-Axis) against the predicted KMeans-clusters (y-Axis). The graph is further colour-coded by the image's original gold label and marker shapes distinguish gold classes with similar colour values. Due to a handful of outliers with extremely large PCA values, the second graph is limited to PCA≤400 for a better overview of the data.
 
-? Images aligned horizontally?
+![alt text](https://github.com/jshrdt/lt2326-h24-wa_modeling/blob/main/cluster_encodings.png?raw=true)
 
-Images do not appear to cluster well along the x-values, but it is rather noticeable, that the gold label colours align horizontally. The colour spread not being entirely random implies that some information is still present in the encodings.
+Data points are spread wide, with a couple of gold labels aligning with each cluster (colour groups aligned horizontally). More notably, the gold labels appear to align along the y-axis, suggesting that some genre information was present in the encodings, which was retained past standard scaling and PCA decomposition.  
 
-Personally, I found the graph was more interpretable when plotting the true class against the PCA value & keeping the clusters colour-coded. The resulting graph also displays the class imbalance from the dataset. Further, it shows the correlation between PCA value and true class - so perhaps clustering PCA values would have been the way to go.
+Therefore, I ran another version of the code, where clustering was done after PCA decomposition of the scaled encodings. The resulting graph strongly relates PCA values to clusters (not surprising, as every image was only represented by one value to perform clustering on). However, it also shows very dense lines of matching gold classes, though most are not confined to a single cluster ID. (I'm still unsure why there are a couple of such extreme outliers).
 
-[add imgs]
+![alt text](https://github.com/jshrdt/lt2326-h24-wa_modeling/blob/main/pca_encodings.png?raw=true)
 
 Literature:  
 https://www.kaggle.com/code/dhanyajothimani/basic-visualization-and-clustering-in-python
 
----
-
+___
 
 ## Part 3
 
