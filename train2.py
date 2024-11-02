@@ -35,7 +35,7 @@ def train(epochs=3, batch_size=32, modelfile=None, device="cpu"):
     sampler = WeightedRandomSampler(weights=class_weights,
                                     num_samples=len(traindataset))
     loader = DataLoader(traindataset, batch_size=batch_size, sampler=sampler)
-    
+
     model = WikiArtPart2().to(device)
     optimizer = Adam(model.parameters(), lr=0.01)
     criterion = nn.MSELoss()

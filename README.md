@@ -118,7 +118,7 @@ The altered image post style transfer still resembled the original image, but pe
 This result starts making sense when inspecting the outputs from the style embeddings training: In trying to generalise over many different paintings in a given art style, the embedding is pushed towards a uniform grey-beige image (sort of a middle ground for all possible pixel values). Though this does not exactly represent style in a meaningful way, it seems the transfer part is working as intended.  
 This can be illustrated by modifying the transfer training loop to give more weight to the style loss (loss = content_loss + (8 * style_loss)).
 
-![alt text](https://github.com/jshrdt/lt2326-h24-wa_modeling/blob/main/example_style_loss_upped.png?raw=true)
+![alt text](https://github.com/jshrdt/lt2326-h24-wa_modeling/blob/main/example_style_lossX8.png?raw=true)
 
 I suspect two main factors for these results, in which the model could be improved:  
 Unsuitable gold style representation during embeddings training & art style as a basis to attempt generalisation over. The former could be improved by setting the gold standard not as the original image, but some feature representation of it (from VGG for example), or the gram matrix of said representation . As for the latter, I'm not too sure what the goal for an art style representation ought to look like, it seems more intuitive to me to attempt a style transfer from a single painting onto another one, or to perhaps create embeddings for a certain artist. Paintings from the same genre probably diverge too much as to allow proper embeddings training with the methods I have used here.
