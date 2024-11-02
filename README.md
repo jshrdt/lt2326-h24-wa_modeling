@@ -10,87 +10,53 @@ After fixing label encoding, test results were consistent when re-testing the sa
 To improve performance with minimal changes, I tried different layers and functions (additional linear layer of size 105*105/10, tanh, leakyrelu) and experimented with the hyper parameters. Once or twice, results were high for tanh but varied greatly. Decreasing the learning rate generally lead to loss continuing to decrease, but no improvement in performance.  
 I landed on the following, which was not completely reliable either, but got varying and often times higher results than the base architecture (2):
 
-Changes:  
+#### Changes:  
+
 - replaced Maxpool2d layer with nn.AdaptiveAvgPool2d((50,50)), also changes hidden layer size to 50*50 (prev: 105*105)
 - swapped out relu for nn.Sigmoid()
 - (changed attribute names: self.maxpool2d -> self.pool, self.relu -> self.activfunc for easy switching between architectures for comparison, added keyword mode to config/model/train function, pass mode='bonusA' in config for avgpool + sigmoid version)
 
 
-### Condensed output  
-(1) Code as-is with the fixed testing script:  
-In epoch 0, loss = 4239.98828125  
-In epoch 1, loss = 1162.042724609375  
-...  
-In epoch 19, loss = 1178.9503173828125  
-Accuracy: 0.16031746566295624  
+#### Condensed output  
 
+(1) Code as-is with the fixed testing script:  
+Accuracy: 16,03% (loss ep1: 4239, ep2: 1162 (...) ep20: 1178)  
+ 
 (2) Model with average pooling & sigmoid:  
-In epoch 0, loss = 1267.143798828125  
-In epoch 1, loss = 1221.037353515625  
-...  
-In epoch 19, loss = 1219.9281005859375  
-Accuracy: 0.19365079700946808  
+Accuracy: 19,37% (loss ep1: 1267, ep2: 1221 (...) ep20: 1219)  
 
 ___
 
 ## Part 1
 
-I tried accounting for the class imbalance by using nn.NLLLoss()'s weight parameter to weight the loss of a given class inverse to its frequency (the less frequent the class, the more is its loss weighed). I tried some different metrics (1-3), but none improved (and actually lowered) performance for either the base or the bonus part architectures from above.  
+I tried accounting for the class imbalance by using nn.NLLLoss()'s weight parameter to weight the loss of a given class inverse to its frequency (the less frequent the class, the more is its loss weighed). I tried some different metrics (1-3), but none improved (and actually lowered) performance for either the base or the bonusA architecture.  
 This leads me to believe that the weights work as intended, but the current architecture is not suited to actually learn the proper classification and therefore performs worse when it becomes impossible to exploit the class imbalance. In Part 2, I continued with weight metric 3.
 
-Changes:  
+#### Changes:  
+
 - added label_counts attribute in WikiArtDataset: dict mapping arttype to its absolute frequency
 - added class_weights calculation in train.py train() function & passed weight tensor to NLLLoss function's weight parameter
 
-(1) weight_per_class_i = amount_training_samples / frequency_class_i_in_training / amount_classes_total
+(1) weight_per_class_i = amount_training_samples / frequency_class_i_in_training / amount_classes_total  
 (2) weight_per_class_i = amount_training_samples / frequency_class_i_in_training  
-(3) weight_per_class_i = 1 / frequency_class_i_in_training. 
+(3) weight_per_class_i = 1 / frequency_class_i_in_training   
 
-### Example runs  
+### Some tests  
 
-#### Weights (1)  
+#### Base model  
 
-Base model (acc: 2,06%)  
-In epoch 0, loss = 6005  
-In epoch 1, loss = 1374  
-...  
-In epoch 19, loss = 1367  
+(1) Accuracy: 2,06% (loss ep1: 6005, ep2: 1374, ep20: 1367)  
+(2) Accuracy: 2,06% (loss ep1: 7729, ep2: 1356(...) ep20: 1374)  
+(3) Accuracy: 8,1% (loss ep1: 8391, ep2: 1370(...) ep20: 1372)  
 
-bonusA model (acc: 5,71%)  
-In epoch 0, loss = 1567  
-In epoch 1, loss = 1476  
-...  
-In epoch 19, loss = 1510  
+#### BonusA model
 
-#### Weights (2)
+(1) Accuracy: 5,71% (loss ep1: 1567, ep2: 1476 (...) ep20: 1510)    
+(2) Accuracy: 7,94% (loss ep1: 1562, ep2: 1442(...) ep20: 1469)  
+(3) Accuracy: 7,3% (loss ep1: 1630, ep2: 1457(...) ep20: 1428)  
 
-Base model (acc: 2,06%)  
-In epoch 0, loss = 7729  
-In epoch 1, loss = 1356  
-...  
-In epoch 19, loss = 1374  
-
-bonusA (acc: 7,94%)  
-In epoch 0, loss = 1562  
-In epoch 1, loss = 1442  
-...  
-In epoch 19, loss = 1469  
-
-#### Weights (3)
-
-Basic model (acc: 8,1%)
-In epoch 0, loss = 8391  
-In epoch 1, loss = 1370  
-In epoch 19, loss = 1372  
-
-bonusA (acc: 7,3%)  
-In epoch 0, loss = 1630  
-In epoch 1, loss = 1457  
-In epoch 19, loss = 1428  
-
-
-Literature: 
-https://medium.com/@zergtant/use-weighted-loss-function-to-solve-imbalanced-data-classification-problems-749237f38b75, Oct 16
+Literature:  
+https://medium.com/@zergtant/use-weighted-loss-function-to-solve-imbalanced-data-classification-problems-749237f38b75, Oct 16  
 https://www.geeksforgeeks.org/handling-class-imbalance-in-pytorch/#2-class-weighting, Oct 18
 
 ___
@@ -103,7 +69,7 @@ For the encoder I used two convolutional layers (3->9->3 channels, kernel size 5
 In the decoder, the encoder's structure was mirrored by two pairs consisting of a transposed convolutional layer followed by an upsampling layer (scale=2) to reconstruct the original input size. The activation function between the pairs was once again relu and the decoder's final layer employed the sigmoid function.  
 Progress was measured by loss values (MSE_loss, initial value, change across epochs, approximate converging value) and plotting the encoded and decoded images, as well as comparison of the latter to the original image from the dataset.
 
-Some experiments with increasing the amount of channels, adding more pairs of convolutional/pooling layers, varying the pooling type, or interspersing layers with more activation functions did not appear to improve performance further. Of my experiments, the structure above was the only one able to retrieve some of the original colours. Reducing the channel size below 3 at any point in the encoder made it impossible to retrieve proper colour values in decoding. 
+Some experiments with increasing the amount of channels, adding more pairs of convolutional/pooling layers, varying the pooling type, or interspersing layers with more activation functions did not appear to improve performance further. Of my experiments, the structure above was the only one able to retrieve some of the original colours. Reducing the channel size below 3 at any point in the encoder made it impossible to retrieve proper colour values in decoding.  
 
 Input images were also rescaled to range [0,1] via division by 255 just after reading the image in the WikiArtImage.get() call.
 
@@ -111,14 +77,7 @@ Performance as indicated by loss was fairly constant (initial: ~4, reaching and 
 
 ### Autoencoder output
 
-Original image  
-![alt text](https://github.com/jshrdt/lt2326-h24-wa_modeling/blob/main/img4_original.png?raw=true)
-
-Decoded image  
-![alt text](https://github.com/jshrdt/lt2326-h24-wa_modeling/blob/main/img4_decoded.png?raw=true)
-
-Encoded image  
-![alt text](https://github.com/jshrdt/lt2326-h24-wa_modeling/blob/main/img4_encoded.png?raw=true)
+![alt text](https://github.com/jshrdt/lt2326-h24-wa_modeling/blob/main/part2_example_img.png?raw=true)
 
 
 ### Clustering
