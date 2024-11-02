@@ -28,15 +28,14 @@ print("Running...")
 
 traindataset = WikiArtDataset(trainingdir, device)
 
-
 def train(epochs=3, batch_size=32, modelfile=None, device="cpu"):
+    # Get class weights in inverse to class frequency and load accoridngly.
     class_weights = torch.Tensor([1 / traindataset.label_counts[label]
                                   for label in traindataset.labels_str])
-
     sampler = WeightedRandomSampler(weights=class_weights,
                                     num_samples=len(traindataset))
-
     loader = DataLoader(traindataset, batch_size=batch_size, sampler=sampler)
+    
     model = WikiArtPart2().to(device)
     optimizer = Adam(model.parameters(), lr=0.01)
     criterion = nn.MSELoss()

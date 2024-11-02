@@ -29,7 +29,6 @@ print("Running...")
 traindataset = WikiArtDataset(trainingdir, device)
 #testingdataset = WikiArtDataset(testingdir, device)
 
-
 #the_image, the_label = traindataset[5]
 #print(the_image, the_image.size())
 
@@ -39,17 +38,19 @@ traindataset = WikiArtDataset(trainingdir, device)
 
 def train(epochs=3, batch_size=32, modelfile=None, device="cpu",
           mode=None):
-    class_weights1 = [(len(traindataset.filedict)
-                       /traindataset.label_counts[label]
-                       / len(traindataset.classes))
-                      for label in traindataset.classes]
+    # Experiment with some different class weights.
+    # class_weights1 = [(len(traindataset.filedict)
+    #                    /traindataset.label_counts[label]
+    #                    / len(traindataset.classes))
+    #                   for label in traindataset.classes]
+
+    # class_weights2 = [(len(traindataset.filedict)
+    #                    /traindataset.label_counts[label])
+    #                   for label in traindataset.classes]
+
     class_weights3 = [1 / traindataset.label_counts[label]
                       for label in traindataset.labels_str]
 
-    class_weights2 = [(len(traindataset.filedict)
-                       /traindataset.label_counts[label])
-                      for label in traindataset.classes]
-    
     samples_weight = torch.Tensor(class_weights3)
     sampler = WeightedRandomSampler(weights=samples_weight,
                                     num_samples=len(traindataset))
@@ -58,9 +59,7 @@ def train(epochs=3, batch_size=32, modelfile=None, device="cpu",
     model = WikiArtModel(mode=mode).to(device)
     optimizer = Adam(model.parameters(), lr=0.01)
 
-    
     criterion = nn.NLLLoss().to(device)
-    # weight = torch.Tensor(class_weights1)
 
     for epoch in range(epochs):
 

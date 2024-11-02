@@ -29,7 +29,8 @@ ___
 
 ## Part 1
 
-I tried accounting for the class imbalance by using nn.NLLLoss()'s weight parameter to weight the loss of a given class inverse to its frequency (the less frequent the class, the more is its loss weighed). I tried some different metrics (1-3), but none improved (and actually lowered) performance for either the base or the bonusA architecture.  
+I tried accounting for the class imbalance by using class weights inverse to a class's frequency. I initially used these in nn.NLLLoss()'s weight parameter (the less frequent the class, the more is its loss weighed). But for explainability switched to using a weighted random sampler for the rest of the assignment instead. The sampler uses the same weights and simply ensures that batches have an even distribution of input items per classes.  
+I tried some different weight metrics (1-3), but none improved (and actually lowered) performance for either the base or the bonusA architecture.  
 This leads me to believe that the weights work as intended, but the current architecture is not suited to actually learn the proper classification and therefore performs worse when it becomes impossible to exploit the class imbalance. In Part 2, I continued with weight metric 3.
 
 #### Changes:  
@@ -89,7 +90,7 @@ Data points are spread wide, with a couple of gold labels aligning with each clu
 
 Therefore, I ran another version of the code, where clustering was done after PCA decomposition of the scaled encodings. The resulting graph strongly relates PCA values to clusters (not surprising, as every image was only represented by one value to perform clustering on). However, it also shows very dense lines of matching gold classes, though most are not confined to a single cluster ID. (I'm still unsure why there are a couple of such extreme outliers).
 
-![alt text](https://github.com/jshrdt/lt2326-h24-wa_modeling/blob/main/pca_encodings.png?raw=true)
+![alt text](https://github.com/jshrdt/lt2326-h24-wa_modeling/blob/main/cluster_pca.png?raw=true)
 
 Literature:  
 https://www.kaggle.com/code/dhanyajothimani/basic-visualization-and-clustering-in-python
@@ -98,29 +99,31 @@ ___
 
 ## Part 3
 
-To get style embeddings I initialised an embeddings layer with 27 random embeddings (one for every art style in the dataset), each of  the same size as the flattened artworks (3*416*416). Embeddings were then trained rather naively with the same auto encoder structure as in Part2. Training aimed to minimise MSE loss to the original image. I experiment with changing the structure, with no noticeable success.
+To get style embeddings I initialised an embeddings layer with 27 random embeddings (one for every art style in the dataset), each of  the same size as the flattened artworks (3*416*416). Embeddings were then trained rather naively with the same auto encoder structure as in Part2. Training aimed to minimise MSE loss to the original image. I experiment with changing the structure, with no noticeable success.  
 
-For style transfer training, I froze the embeddings and concatenated input images with their corresponding style embedding (indexed via its art style, y value from the batcher) along axis 1/the channel dimension. This resulted in a new encoder input of size (batch_size, 6, 416, 416). 
-Though embedding and transfer training share the same model, due to this difference in initial channel size, they each have their own initial Conv2d network, differing only in the expected in_channel size.
+For style transfer training, I froze the embeddings and concatenated input images with their corresponding style embedding (indexed via its art style, y value from the batcher) along axis 1/the channel dimension. This resulted in a new encoder input of size (batch_size, 6, 416, 416).  
+Though embedding and transfer training share the same model, due to this difference in initial channel size, they each have their own initial Conv2d network, differing only in the expected in_channel size.  
 
-For style transfer, I implemented two loss functions: 
-1) MSE loss for autoencoder output and original 'content' image
-2) MSE loss for autoencoder output and style embedding
-By combining these two losses, the model is trained to retain as much information as possible from both content and style input at the same time.
-
+For style transfer, I implemented two loss functions:  
+1) MSE loss for autoencoder output and original 'content' image  
+2) MSE loss for autoencoder output and style embedding  
+By combining these two losses, the model is trained to retain as much information as possible from both content and style input at the same time.  
 
 ### Results
 
-The altered image post style transfer still resembled the original image, but perhaps diverged from it more strongly than in part 2. Essentially I would describe the output here as almost grey-scaling or applying a sepia filter to the original content image, intensity of this effect varies. 
+The altered image post style transfer still resembled the original image, but perhaps diverged from it more strongly than in part 2. Essentially I would describe the output here as almost applying a sepia filter to the original content image, intensity of this effect varies.  
 
-This result starts making sense when inspecting the outputs from the style embeddings training: In trying to generalise over many different paintings in a given art style, the embedding is pushed towards a uniform grey-beige image (sort of a middle ground for all possible pixel values). Though this does not exactly represent style in a meaningful way, it seems the transfer part is working as intended. 
-This can be illustrated by modifying the transfer training loop to give more weight to the style loss (loss = content_loss + (4 * style_loss)).
+![alt text](https://github.com/jshrdt/lt2326-h24-wa_modeling/blob/main/example_style_transfer.png?raw=true)
 
-I suspect two main factors for these results, in which the model could be improved: 
-Unsuitable gold style representation during embeddings training & art style as a basis to attempt generalisation over. The former could be improved by setting the gold standard not as the original image, but some feature representation of it (from VGG for example). As for the latter, I'm not too sure what the goal for an art style representation ought to look like, it seems more intuitive to me to attempt a style transfer from a single painting onto another one, or to perhaps create embeddings for a certain artist. Paintings from the same genre probably diverge too much as to allow proper embeddings training with the methods I have used here.
+This result starts making sense when inspecting the outputs from the style embeddings training: In trying to generalise over many different paintings in a given art style, the embedding is pushed towards a uniform grey-beige image (sort of a middle ground for all possible pixel values). Though this does not exactly represent style in a meaningful way, it seems the transfer part is working as intended.  
+This can be illustrated by modifying the transfer training loop to give more weight to the style loss (loss = content_loss + (8 * style_loss)).
 
+![alt text](https://github.com/jshrdt/lt2326-h24-wa_modeling/blob/main/example_style_loss_upped.png?raw=true)
 
-Literature: 
+I suspect two main factors for these results, in which the model could be improved:  
+Unsuitable gold style representation during embeddings training & art style as a basis to attempt generalisation over. The former could be improved by setting the gold standard not as the original image, but some feature representation of it (from VGG for example), or the gram matrix of said representation . As for the latter, I'm not too sure what the goal for an art style representation ought to look like, it seems more intuitive to me to attempt a style transfer from a single painting onto another one, or to perhaps create embeddings for a certain artist. Paintings from the same genre probably diverge too much as to allow proper embeddings training with the methods I have used here.
+
+Literature:  
 Gates, L. A., Ecker, A. S., Bethge, M. (2016). Image Style Transfer Using Convolutional Neural Networks. 2016 IEEE Conference on Computer Vision and Pattern Recognition (CVPR). 2414-2423. https://doi.org/10.1109/CVPR.2016.265
 
 ___

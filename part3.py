@@ -92,7 +92,7 @@ def train(loader, model, epochs=5, modelfile=None, device="cpu"):
             c_loss = criterion_img(decoded, X)
             #style loss
             s_loss = criterion_style(style_embed, X)
-            loss = c_loss + s_loss
+            loss = c_loss + 8*s_loss
             loss.backward()
             accumulate_loss += loss
             optimizer.step()
@@ -118,7 +118,6 @@ def combine(model, img_idx, transfer_style):
     ax1.imshow(img.numpy(force=True).transpose(1, 2, 0))
     ax2.imshow(altered_img[0].numpy(force=True).transpose(1, 2, 0))
     plt.show()
-    print('--- end ---')
 
 
 if __name__=='__main__':
@@ -144,4 +143,6 @@ if __name__=='__main__':
     print('Done')
 
     # Run in interactive window to view original and altered image.
-    combine(model, img_idx=4, transfer_style='Ukiyo_e')
+    combine(model, img_idx=5, transfer_style='Ukiyo_e')
+    print('--- end ---')
+

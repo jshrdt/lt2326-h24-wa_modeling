@@ -4,6 +4,7 @@ import os
 import torch
 from torch.utils.data import Dataset, DataLoader
 import matplotlib.pyplot as plt
+import matplotlib
 import torchvision.transforms.functional as F
 import tqdm
 from wikiart import WikiArtDataset, WikiArtPart2
@@ -66,75 +67,112 @@ def format_encodings(encodings: pd.Series) -> list:
 
     return encodings_scaled
 
-def cluster(encodings_scaled: list) -> np.ndarray:
-    """Run KMeans on a PCA values of from flattened and scaled image
-    encodings, return array of KMeans cluster labels."""
-    # collapse flat/scaled image encodings to singular value.
-    pca = PCA()
-    pca.fit(encodings_scaled)
-    # Fit KMeans on pca 
-    kmeans = KMeans(n_clusters=27)
-    kmeans.fit(pca.singular_values_.reshape(-1, 1))
-    
-    
-    clust_labels = kmeans.predict(np.float64(pca.singular_values_).reshape(-1, 1))
+def cluster(encodings_scaled: list, cluster_pca=False) -> np.ndarray:
+    """Run KMeans on flattened and scaled image encodings or on their
+    PCA values, return array of KMeans cluster labels (and pca values,
+    if cluster_pca==True)."""
 
-    return clust_labels, pca.singular_values_
+    if cluster_pca==True:
+        print('Runnning PCA...')
+        # Collapse flat/scaled image encodings to singular value.
+        pca = PCA()
+        pca.fit(encodings_scaled)
 
-def plot_cluster(data_df, limit=False):
+        # Fit & predcit KMeans on pca reduced images
+        print('Running KMeans...')
+        kmeans = KMeans(n_clusters=27)
+        kmeans.fit(pca.singular_values_.reshape(-1, 1))
+        clust_labels = kmeans.predict(np.float64(pca.singular_values_).reshape(-1, 1))
+        return clust_labels, pca.singular_values_
+
+    else:
+        # Fit and predict on formatted encodings.
+        print('Running KMeans...')
+        kmeans = KMeans(n_clusters=27)
+        kmeans.fit(encodings_scaled)
+        clust_labels = kmeans.predict(np.float64(encodings_scaled))
+
+        return clust_labels
+
+def plot_cluster(data_df, plt_title='K-Means clustering', limit=False):
     # limit df due to outliers
     if limit:
-        data_df = data_df[data_df['encodings_PCA']<limit]
+        data_df = data_df[data_df['encodings_PCA']<limit].reset_index()
     # plot kmeans class (y-ax) to image's PCA value (x-ax), colour-coded
     # by original gold label.
     fig = plt.figure()
     fig.set_figwidth(15)
     ax = fig.add_subplot(111)
-    scatter = ax.scatter(list(data_df['encodings_PCA']), data_df['y_pred'],
-                        c=data_df['y_gold'],
-                        cmap=plt.cm.hsv)
+    # Set marker style variation & color
+    m = ['^', 'o', '*'] * int(27/3)
+    cmap = plt.colormaps['hsv']
+    color_list = cmap(np.linspace(0, 1, 27))
+    # plot
+    for i in range(len(data_df)):
+        plt.scatter(data_df['encodings_PCA'][i], data_df['y_pred'][i],
+                    marker=m[int(data_df['y_gold'][i])], color=color_list[int(data_df['y_gold'][i])]
+                    )
+
     # Add information
-    ax.set_title('K-Means Clustering')
+    ax.set_title(plt_title)
     ax.set_xlabel('Image PCA value')
     ax.set_ylabel('KMeans cluster ID')
+    cbar = plt.colorbar(label='True class from dataset')
+    cbar.set_ticks(np.arange(0, 1, (1/7)))
+    cbar.set_ticklabels([str(idx) for idx in range(0, 27)[::4]])
 
-    plt.colorbar(scatter, label='True class from dataset')
+    plt.show()
 
 
-# load model
-model = WikiArtPart2()
-model.load_state_dict(torch.load(config['modelfile2'], weights_only=True))
-model = model.to(config['device'])
-model.eval()
+if __name__=='__main__':
+    # load model
+    model = WikiArtPart2()
+    model.load_state_dict(torch.load(config['modelfile2'], weights_only=True))
+    model = model.to(config['device'])
+    model.eval()
 
-# Get encodings and their true_y, either loaded from file, or created anew.
-if  os.path.isfile(config['encodingsfile']):
-    print('Loading encodings from file...')
-    encodings = np.load(config['encodingsfile'])
-    encodings_dict = get_encodings(predict=False)
-    encodings_dict['encodings'] = list(encodings)
-else:
-    print('Encoding images from testdir using model...')
-    encodings_dict = get_encodings(device=config['device'])
-    encodings_matrix = np.array([encodings_dict['encodings'][i].numpy(force=True)
-                                for i in range(len(encodings_dict['encodings']))])
-    if config['encodingsfile']:
-        np.save(config['encodingsfile'], encodings_matrix)
+    # Get encodings and their true_y, either loaded from file, or created anew.
+    if  os.path.isfile(config['encodingsfile']):
+        print('Loading encodings from file...')
+        encodings = np.load(config['encodingsfile'])
+        encodings_dict = get_encodings(predict=False)
+        encodings_dict['encodings'] = list(encodings)
+    else:
+        print('Encoding images from testdir using model...')
+        encodings_dict = get_encodings(device=config['device'])
+        encodings_matrix = np.array([encodings_dict['encodings'][i].numpy(force=True)
+                                    for i in range(len(encodings_dict['encodings']))])
+        if config['encodingsfile']:
+            np.save(config['encodingsfile'], encodings_matrix)
 
-##plt.imshow(decode(encodings_dict['encodings'][6], model))
+    # cluster and plot encoded images and respective 
+    data_df = pd.DataFrame(encodings_dict)
 
-# cluster and plot encoded images and respective 
-data_df = pd.DataFrame(encodings_dict)
+    # Flatten and scale encodings
+    print('Formatting encodings...')
+    scaled_encodings = format_encodings(data_df['encodings'])
+    data_df.insert((data_df.shape[1]),'encodings_scaled', scaled_encodings)
 
-# Flatten and scale encodings
-scaled_encodings = format_encodings(data_df['encodings'])
-data_df.insert((data_df.shape[1]),'encodings_scaled', scaled_encodings)
+    # Set whether to cluster formatted encodings or their PCA values
+    cluster_pca=True
 
-# Get pca values from fitting on scaled encodings
-clusters, pcas = cluster(scaled_encodings)
-data_df.insert((data_df.shape[1]),'y_pred', pd.DataFrame(clusters))
-data_df.insert((data_df.shape[1]), 'encodings_PCA', pcas)
+    if cluster_pca:
+        # cluster PCA values and plot against clusters
+        clusters, pcas = cluster(scaled_encodings, cluster_pca=True)
+        data_df.insert((data_df.shape[1]),'y_pred', pd.DataFrame(clusters))
+        data_df.insert((data_df.shape[1]), 'encodings_PCA', pcas)
+        title = 'K-Means clustering on image PCA values'
+    else:
+        # cluster encodigs, then perform PCA for plotting against clusters
+        clusters = cluster(scaled_encodings)
+        data_df.insert((data_df.shape[1]),'y_pred', pd.DataFrame(clusters))
+        print('Running PCA...')
+        pca = PCA()
+        pca.fit(scaled_encodings)
+        data_df['encodings_PCA'] = pca.singular_values_
+        title = 'K-Means clustering on scaled encodings'
 
-# Plot clusterXpcaXgold, adjust limit for outliers (max outlier at 2724, 
-# more values from 1200, most are below 450/200)
-#plot_cluster(data_df, limit=200)
+
+    plot_cluster(data_df, plt_title=title, limit=False)
+    plot_cluster(data_df, plt_title=title, limit=400)
+    print('--- end ---')
