@@ -94,7 +94,7 @@ First, I encoded the images in the test set using the model above, I then flatte
 ![alt text](https://github.com/jshrdt/lt2326-h24-wa_modeling/blob/main/cluster_encodings.png?raw=true)
 
 Image encodings in a given cluster group tend to also have similar PCA values, as they align in dense horizontal lines in the plot above. Most clusters' range of PCA values is a similar size, though curiously there are a couple of noticeably smaller clusters (e.g. single turquoise triangle on y=0, purple triangle on y=1). Art styles do not appear to be retained in the encodings in any meaningful or consistent way. Emerging clusters do not tend to display a clearly dominant true class. As far as I can see, at most the clusters on y=11 (with 6/8 pink crosses), y=13 (5/8 purple circles) have at least a 50%+ dominance, but entries from their respective true classes are found across many other clusters as well.  
-There also does not happen to be any vertical alignment of true classes (which would we based on having similar PCA values) either.
+There also does not happen to be any vertical alignment of true classes (which would be based on having similar PCA values) either.
 
 ___
 
@@ -136,5 +136,5 @@ ___
 
 ## Bonus B
 
-- 
+/
 
