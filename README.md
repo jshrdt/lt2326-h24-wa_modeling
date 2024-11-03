@@ -1,6 +1,6 @@
 ## Bonus A
 
-File(s): train_bonusA.py, wikiart.py (class WikiArtModel, bonusA)
+File(s): train_bonusA.py, wikiart.py (class WikiArtModel, bonusA), config bonusA
 
 With batch size 128 and learning rate 0.001 and some guesses to architectural changes (additional linear layer), results passed 5% multiple times, but were still rather inconsistent (3~6%). However, compared with the original architecture's results, the loss values and their change across epochs were indicative of the model learning (loss decreasing across 10 epochs from ~300 down to 10). I also  found that test results were not the same when running the test script multiple times on the same model.  
 So I had a look at the testing script and noticed that the y label encoding for a given class seemed to be inconsistent across runs (depending on the order in which classes were seen after shuffling of the testing data?).
@@ -38,7 +38,7 @@ This leads me to believe that the weights work as intended, but the current arch
 
 #### Changes:  
 
-- added label_counts attribute in WikiArtDataset: dict mapping arttype to its absolute frequency
+- added label_counts attribute in WikiArtDataset: dict mapping art type to its absolute frequency
 - added class_weights calculation in train.py train() function & passed weight tensor to NLLLoss function's weight parameter
 
 (1) weight_per_class_i = amount_training_samples / frequency_class_i_in_training / amount_classes_total  
