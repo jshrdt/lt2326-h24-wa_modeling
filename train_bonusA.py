@@ -16,7 +16,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-c", "--config", help="configuration file",
                     default="config.json")
 
-args = parser.parse_args()
+args, unknown = parser.parse_known_args()
 
 config = json.load(open(args.config))
 
@@ -37,7 +37,7 @@ traindataset = WikiArtDataset(trainingdir, device)
 # the_showable_image.show()
 
 def train(epochs=3, batch_size=32, modelfile=None, device="cpu",
-          mode=None):
+          is_bonus=None):
     # Experiment with some different class weights.
     # class_weights1 = [(len(traindataset.filedict)
     #                    /traindataset.label_counts[label]
@@ -56,9 +56,11 @@ def train(epochs=3, batch_size=32, modelfile=None, device="cpu",
                                     num_samples=len(traindataset))
 
     loader = DataLoader(traindataset, batch_size=batch_size, sampler=sampler)
-    model = WikiArtModel(mode=mode).to(device)
-    optimizer = Adam(model.parameters(), lr=0.01)
 
+    # Decide whether to create base architecture or bonus A.
+    is_bonus = True if is_bonus=='True' else False
+    model = WikiArtModel(bonusA=is_bonus).to(device)
+    optimizer = Adam(model.parameters(), lr=0.01)
     criterion = nn.NLLLoss().to(device)
 
     for epoch in range(epochs):
@@ -74,14 +76,6 @@ def train(epochs=3, batch_size=32, modelfile=None, device="cpu",
             loss.backward()
             accumulate_loss += loss
             optimizer.step()
-        
-        # for c in traindataset.classes:
-        #     print(c,traindataset.label_counts[c],
-        #           1/traindataset.label_counts[c],
-        #           1/traindataset.label_counts[c],
-        #           all_y.count(traindataset.label_to_idx[c]),
-        #                          )
-       # print((len(all_y)))
 
         print("In epoch {}, loss = {}".format(epoch, accumulate_loss))
 
@@ -92,4 +86,4 @@ def train(epochs=3, batch_size=32, modelfile=None, device="cpu",
 
 model = train(config["epochs"], config["batch_size"],
               modelfile=config["modelfile"], device=device,
-              mode=config["mode"])
+              is_bonus=config["bonusA"])

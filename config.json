@@ -8,5 +8,5 @@
     "device": "cuda:0",
     "epochs": 10,
     "batch_size": 32,
-    "mode": "bonusA"
+    "bonusA": "True"
 }

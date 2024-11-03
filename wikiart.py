@@ -72,10 +72,9 @@ class WikiArtDataset(Dataset):
         return image, ilabel
 
 class WikiArtModel(nn.Module):
-    def __init__(self, mode=None, num_classes=27):
+    def __init__(self, num_classes=27, bonusA=False):
         super().__init__()
-        self.mode = mode
-        if self.mode == 'bonusA':
+        if bonusA:
             self.conv2d = nn.Conv2d(3, 1, (4,4), padding=2)
             self.pool = nn.AdaptiveAvgPool2d((50,50))
             self.flatten = nn.Flatten()
@@ -86,7 +85,7 @@ class WikiArtModel(nn.Module):
             self.linear2 = nn.Linear(300, num_classes)  # 27
             self.softmax = nn.LogSoftmax(dim=1)
 
-        else:
+        else:  # base architecture from class
             self.conv2d = nn.Conv2d(3, 1, (4,4), padding=2)
             self.pool = nn.MaxPool2d((4,4), padding=2)
             self.flatten = nn.Flatten()
