@@ -1,6 +1,6 @@
 ___
 
-train_bonusA.py, train_part2.py, and part3.py can be called with command line argument -ep (int) for adjust for epochs for testing, if called without -ep, the value defined in config will be used.
+train_bonusA.py, train_part2.py, and part3.py can be called with command line argument -ep (int) for adjustment of epochs to test if the scripts run, if called without -ep, the value defined in config will be used.
 ___
 
 ## Bonus A
