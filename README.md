@@ -9,13 +9,13 @@ So I had a look at the testing script and noticed that the y label encoding for 
 
 After fixing label encoding, test results were consistent when re-testing the same model. Performance for the model as-is caps around 16% (1), which is the baseline for always predicting the most frequent arttype in the data (101/630 items in the test set).
 
-To improve performance with minimal changes, I tried different layers and functions (additional linear layer of size 105*105/10, tanh, leakyrelu) and experimented with the hyper parameters. Once or twice, results were high for tanh but varied greatly. Decreasing the learning rate generally lead to loss continuing to decrease, but no improvement in performance.  
-I landed on the following, which was not completely reliable either, but got varying and often times higher results than the base architecture (2):
+To improve performance with minimal changes, I tried different layers and functions (additional linear layer of size (105*105/10), tanh, leakyReLU) and experimented with the hyper parameters. Once or twice, results were high for tanh but varied greatly. Decreasing the learning rate generally lead to loss continuing to decrease, but no improvement in performance.  
+I landed on the following, which was not completely reliable either, and loss seems to stagnate very early on, but it got varying and often times higher results than the base architecture (2):
 
 #### Changes:  
 
 - replaced Maxpool2d layer with nn.AdaptiveAvgPool2d((50,50)), also changes hidden layer size to 50*50 (prev: 105*105)
-- swapped out relu for nn.Sigmoid()
+- swapped out ReLU for nn.Sigmoid()
 - (changed attribute names: self.maxpool2d -> self.pool, self.relu -> self.activfunc for easy switching between architectures for comparison, added keywords for bonus part ! to config/model/train function, set ("bonusA": "True") in config for avgpool + sigmoid version)
 
 #### Condensed output  
@@ -33,7 +33,7 @@ ___
 File(s): train_bonusA.py, wikiart.py (class WikiArtModel)
 
 I tried accounting for the class imbalance by using class weights inverse to a class's frequency. I initially used these in nn.NLLLoss()'s weight parameter (the less frequent the class, the more is its loss weighed). But for explainability switched to using a weighted random sampler for the rest of the assignment instead. The sampler uses the same weights and simply ensures that batches have an even distribution of input items per classes.  
-I tried some different weight metrics (1-3), but none improved (and actually lowered) performance for either the base or the bonusA architecture.  
+I experimented with some different weight metrics (1-3), but none improved (and actually lowered) performance for either the base or the bonusA architecture.  
 This leads me to believe that the weights work as intended, but the current architecture is not suited to actually learn the proper classification and therefore performs worse when it becomes impossible to exploit the class imbalance. In Part 2, I continued with weight metric 3.
 
 #### Changes:  
@@ -71,8 +71,8 @@ ___
 
 File(s): train_part2.py, wikiart.py (class WikiArtPart2), config modelfile2
 
-For the encoder I used two convolutional layers (3->9->3 channels, kernel size 5), each followed by a max pooling layer (kernel size & stride 2) to reduce the image size to 6,25% of the original size (from (3,416,416) to (3,104,104). The activation function between the two Conv2d/pooling pairs was relu.  
-In the decoder, the encoder's structure was mirrored by two pairs consisting of a transposed convolutional layer followed by an upsampling layer (scale=2) to reconstruct the original input size. The activation function between the pairs was once again relu and the decoder's final layer employed the sigmoid function.  
+For the encoder I used two convolutional layers (3->9->3 channels, kernel size 5), each followed by a max pooling layer (kernel size & stride 2) to reduce the image size to 6,25% of the original size (from (3,416,416) to (3,104,104)). The activation function between the two Conv2d/pooling pairs was ReLU.  
+In the decoder, the structure of the encoder was mirrored by two pairs consisting of a transposed convolutional layer followed by an upsampling layer (scale=2) to reconstruct the original input size. The activation function between the pairs was once again ReLU and the decoder's final layer employed the sigmoid function.  
 Progress was measured by loss values (MSE_loss, initial value, change across epochs, approximate converging value) and plotting the encoded and decoded images, as well as comparison of the latter to the original image from the dataset.
 
 Some experiments with increasing the amount of channels, adding more pairs of convolutional/pooling layers, varying the pooling type, or interspersing layers with more activation functions did not appear to improve performance further. Of my experiments, the structure above was the only one able to retrieve some of the original colours. Reducing the channel size below 3 at any point in the encoder made it impossible to retrieve proper colour values in decoding.  
@@ -93,7 +93,7 @@ First, I encoded the images in the test set using the model above, I then flatte
 
 ![alt text](https://github.com/jshrdt/lt2326-h24-wa_modeling/blob/main/cluster_encodings.png?raw=true)
 
-Image encodings in a given cluster group tend to also have similar PCA values, as they align in dense horizontal lines in the plot above. Most clusters' range of PCA values is a similar size, though curiously there are a couple of noticeably smaller clusters (e.g. single light blue star in the very top cluster). Art styles do not appear to be retained in the encodings in any meaningful way as no clusters with clearly dominant colours emerge in the plot.  
+Image encodings in a given cluster group tend to also have similar PCA values, as they align in dense horizontal lines in the plot above. Most clusters' range of PCA values is a similar size, though curiously there are a couple of noticeably smaller clusters (e.g. single turquoise triangle on y=0). Art styles do not appear to be retained in the encodings in any meaningful way as no clusters with clearly dominant colours emerge in the plot.  
 
 ___
 

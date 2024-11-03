@@ -22,6 +22,7 @@ device = config['device']
 
 print('Running...')
 
+
 def get_encodings(testingdir: str = config['testingdir'], device='cpu',
                   predict: bool = True) -> dict:
     """Loads data from testdir and encodes images with model. Returns a 
@@ -86,7 +87,7 @@ def plot_cluster(data_df):
     ax = fig.add_subplot(111)
 
     # Set marker style variation & color for gold class
-    m = ['^', 'o', '*'] * int(27/3)
+    m = ['^', 'o', '*', '+'] * 7
     cmap = plt.colormaps['hsv']
     color_list = cmap(np.linspace(0, 1, 27))
 
