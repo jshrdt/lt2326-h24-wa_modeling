@@ -14,9 +14,13 @@ import os
 parser = argparse.ArgumentParser()
 parser.add_argument('-c', '--config', help='configuration file',
                     default='config.json')
+parser.add_argument("-ep", "--epochs", help="cnumber of training epochs",
+                    default=0)
+
 args, unknown = parser.parse_known_args()
 config = json.load(open(args.config))
 
+epochs = config['epochs'] if args.epochs == 0 else int(args.epochs)
 device = config['device'] if torch.cuda.is_available() else 'cpu'
 traindataset = WikiArtDataset(config['trainingdir'], device)
 testingdataset = WikiArtDataset(config['testingdir'], device)
@@ -123,8 +127,8 @@ if __name__=='__main__':
                                          weights_only=True))
         model = model.to(device)
     else:
-        embed_model = train_embeds(loader, epochs=config['epochs'],device=device)
-        model = train(loader, embed_model, epochs=config['epochs'],
+        embed_model = train_embeds(loader, epochs, device=device)
+        model = train(loader, embed_model, epochs,
                       modelfile=config['modelfile3'], device=device)
 
     # Run in interactive window to view original and altered image.

@@ -10,11 +10,14 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("-c", "--config", help="configuration file",
                     default="config.json")
+parser.add_argument("-ep", "--epochs", help="cnumber of training epochs",
+                    default=0)
 
 args = parser.parse_args()
 config = json.load(open(args.config))
 trainingdir = config["trainingdir"]
 device = config["device"]
+epochs = config['epochs'] if args.epochs == 0 else int(args.epochs)
 
 print("Running...")
 traindataset = WikiArtDataset(trainingdir, device)
@@ -58,6 +61,6 @@ def train(epochs=3, batch_size=32, modelfile=None, device="cpu"):
 
 if __name__=='__main__':
     # Train & save autoencoder
-    model = train(config["epochs"], config["batch_size"],
+    model = train(epochs, config["batch_size"],
                   modelfile=config["modelfile2"], device=device)
     print('--- end ---')
