@@ -135,7 +135,6 @@ The former could be improved by setting the gold standard not as the original im
 
 Literature:  
 Gates, L. A., Ecker, A. S., Bethge, M. (2016). Image Style Transfer Using Convolutional Neural Networks. 2016 IEEE Conference on Computer Vision and Pattern Recognition (CVPR). 2414-2423. https://doi.org/10.1109/CVPR.2016.265  
-https://pytorch.org/tutorials/advanced/neural_style_tutorial.html  
 
 ___
 
